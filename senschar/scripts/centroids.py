@@ -13,12 +13,12 @@ from astropy.modeling import fitting, models
 from scipy.stats import norm
 from astropy.io import fits as pyfits
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam.image
-import azcam_console.console
-from azcam_console.plot import plt, update
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar.image
+import senschar_console.console
+from senschar_console.plot import plt, update
 
 
 def centroids(filename: str = ".", threshold: float = 500.0) -> None:
@@ -34,7 +34,7 @@ def centroids(filename: str = ".", threshold: float = 500.0) -> None:
     # inputs
     threshold = float(threshold)
     if filename == ".":
-        filename = azcam.db.parameters.get_local_par(
+        filename = senschar.db.parameters.get_local_par(
             "centroids",
             "filename",
             "prompt",
@@ -42,22 +42,22 @@ def centroids(filename: str = ".", threshold: float = 500.0) -> None:
             filename,
         )
     if filename == ".":
-        reply = azcam_console.utils.file_browser("", [("image files", ("*.fits"))])
+        reply = senschar_console.utils.file_browser("", [("image files", ("*.fits"))])
         if reply is None:
             return
         filename = reply[0]
-        azcam.db.parameters.set_local_par("centroids", "filename", filename)
+        senschar.db.parameters.set_local_par("centroids", "filename", filename)
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.util.make_image_filename(filename)
 
     # debias the image
-    azcam.fits.colbias(filename)
+    senschar.fits.colbias(filename)
 
     # open FITS file
     fe55im = pyfits.open(filename)
 
     # make data buffer from FITS file
-    im1 = azcam.image.Image(filename)
+    im1 = senschar.image.Image(filename)
     im1.assemble(1)
     data = im1.buffer
     maxrows = len(data)

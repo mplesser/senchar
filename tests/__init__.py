@@ -1,3 +1,3 @@
 """
-AzCam tests - not yet implemented
+senschar tests - not yet implemented
 """

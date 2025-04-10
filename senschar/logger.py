@@ -6,20 +6,20 @@ import threading
 import socket
 from typing import List
 
-import azcam
-import azcam.exceptions
+import senschar
+import senschar.exceptions
 import loguru
 
-import azcam.utils
+import senschar.utils
 
 
-class AzCamLogger(object):
+class Logger(object):
     """
-    The azcam Logger class.
+    The Logger class.
     """
 
     def __init__(self) -> None:
-        self.logfile = "azcam.log"
+        self.logfile = "senschar.log"
         self.logger = loguru.logger
         self.use_logprefix = 1
         self.last_data = []  # data since last call to get_data
@@ -45,11 +45,11 @@ class AzCamLogger(object):
         """
 
         # don't log if level > global verbosity
-        if level > azcam.db.verbosity:
+        if level > senschar.db.verbosity:
             return
 
         message = str(message)  # better for exceptions
-        message = azcam.utils.dequote(message)
+        message = senschar.utils.dequote(message)
 
         # format message
         if len(args) == 1:
@@ -89,7 +89,7 @@ class AzCamLogger(object):
         self, logtype="13", host="localhost", port=2404, logfile=None, use_timestamp=1
     ):
         """
-        Start the azcam logger.
+        Start the senschar logger.
 
         :param logtype: code for loggers to start (1 console, 2 socket, 3 file - combine as '23')
         :param host: hostname for logging over socket
@@ -124,13 +124,13 @@ class AzCamLogger(object):
                 port,
             )
             self.logger.add(socket_handler)
-            azcam.log(f"Logging to logging server on port {port}")
+            senschar.log(f"Logging to logging server on port {port}")
 
         # rotating file handler
         if "3" in logtype:
             if logfile is None:
                 if self.logfile is None:
-                    raise azcam.exceptions.AzcamError("no logfile specified")
+                    raise senschar.exceptions.SenscharError("no logfile specified")
             else:
                 self.logfile = logfile
             if use_timestamp:
@@ -146,7 +146,7 @@ class AzCamLogger(object):
                 rotation="10 MB",
                 retention="1 week",
             )
-            azcam.log(f"Logging to file {self.logfile}")
+            senschar.log(f"Logging to file {self.logfile}")
 
         return
 

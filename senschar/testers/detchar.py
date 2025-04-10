@@ -2,10 +2,10 @@ import datetime
 import os
 import subprocess
 
-import azcam
-import azcam.utils
-from azcam_console.testers.report import Report
-from azcam.tools.tools import Tools
+import senschar
+import senschar.utils
+from senschar_console.testers.report import Report
+from senschar.tools.tools import Tools
 
 
 class DetChar(Tools, Report):
@@ -44,7 +44,7 @@ class DetChar(Tools, Report):
         if not self.is_setup:
             self.setup()
 
-        folder = azcam.utils.curdir()
+        folder = senschar.util.curdir()
         self.report_folder = folder
 
         print(f"Generating {self.report_name}")
@@ -79,7 +79,7 @@ class DetChar(Tools, Report):
             self.setup()
 
         if len(self.report_comment) == 0:
-            self.report_comment = azcam.utils.prompt("Enter report comment")
+            self.report_comment = senschar.util.prompt("Enter report comment")
 
         # get current date
         self.report_date = datetime.datetime.now().strftime("%b-%d-%Y")
@@ -106,7 +106,7 @@ class DetChar(Tools, Report):
         lines.append(f"|Report date    |{self.report_date}|")
 
         # Make report files
-        azcam.log(f"Generating {self.summary_report_name}.pdf")
+        senschar.log(f"Generating {self.summary_report_name}.pdf")
         self.write_report(self.summary_report_name, self.summary_lines, lines)
 
         return
@@ -117,23 +117,23 @@ class DetChar(Tools, Report):
         file.  Start in the _shipment folder.
         """
 
-        startdir = azcam.utils.curdir()
+        startdir = senschar.util.curdir()
         shipdate = os.path.basename(startdir)
         idstring = f"{shipdate}"
 
         # cleanup folder
-        azcam.log("cleaning dataset folder")
+        senschar.log("cleaning dataset folder")
         itlutils.cleanup_files()
 
         # move one folder above report folder
-        # azcam.utils.curdir(reportfolder)
-        # azcam.utils.curdir("..")
+        # senschar.util.curdir(reportfolder)
+        # senschar.util.curdir("..")
 
         self.copy_files()
 
         # copy files to new folder and archive
-        azcam.log(f"copying dataset to {idstring}")
-        currentfolder, newfolder = azcam_console.utils.make_file_folder(idstring)
+        senschar.log(f"copying dataset to {idstring}")
+        currentfolder, newfolder = senschar_console.utils.make_file_folder(idstring)
 
         copy_files = glob.glob("*.pdf")
         for f in copy_files:
@@ -145,21 +145,21 @@ class DetChar(Tools, Report):
         for f in copy_files:
             shutil.move(f, newfolder)
 
-        azcam.utils.curdir(newfolder)
+        senschar.util.curdir(newfolder)
 
         # make archive file
-        azcam.utils.curdir(currentfolder)
-        azcam.log("making archive file")
+        senschar.util.curdir(currentfolder)
+        senschar.log("making archive file")
         archivefile = itlutils.archive(idstring, "zip")
         shutil.move(archivefile, newfolder)
 
         # delete data files from new folder
-        azcam.utils.curdir(newfolder)
+        senschar.util.curdir(newfolder)
         [os.remove(x) for x in glob.glob("*.pdf")]
         [os.remove(x) for x in glob.glob("*.fits")]
         [os.remove(x) for x in glob.glob("*.csv")]
 
-        azcam.utils.curdir(startdir)
+        senschar.util.curdir(startdir)
 
         self.remote_upload_folder = idstring
 

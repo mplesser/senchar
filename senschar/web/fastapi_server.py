@@ -14,7 +14,7 @@ JSON example:
     }
     r = requests.post("http://localhost:2403/api", json=data1)
     print(r.status_code, r.json())
-    
+
 Default response is JSON:
     response = {
         "message": "Finished",
@@ -34,18 +34,14 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.wsgi import WSGIMiddleware
 
-from azcam.web.exposure.exposure_web import ExposureWeb
-from azcam.web.queue.queue_web import QueueWeb
-from azcam.web.status.status_web import StatusWeb
 
-
-import azcam
-from azcam import exceptions
+import senschar
+from senschar import exceptions
 
 
 class WebServer(object):
     """
-    Azcam web server.
+    senschar web server.
     """
 
     def __init__(self):
@@ -63,7 +59,7 @@ class WebServer(object):
 
         self.is_running = 0
 
-        azcam.db.webserver = self
+        senschar.db.webserver = self
 
     def initialize(self):
         """
@@ -114,7 +110,7 @@ class WebServer(object):
                 {
                     "request": request,
                     "message": self.message,
-                    "webport": azcam.db.cmdserver.port + 1,
+                    "webport": senschar.db.cmdserver.port + 1,
                 },
             )
 
@@ -145,7 +141,7 @@ class WebServer(object):
         @app.get("/api/exposure/get_status", response_class=JSONResponse)
         async def expstatus(request: Request, command: str = None):
 
-            expstatus = azcam.db.api.get_status()
+            expstatus = senschar.db.api.get_status()
 
             response = {
                 "message": "Finished",
@@ -172,7 +168,7 @@ class WebServer(object):
                 if command is None:
                     args = await request.json()
                     try:
-                        toolid = azcam.db.api
+                        toolid = senschar.db.api
                         command = getattr(toolid, args["command"])
 
                         arglist = args["args"]
@@ -180,7 +176,7 @@ class WebServer(object):
                         reply = command(*arglist, **kwargs)
                     except Exception as e:
                         reply = repr(e)
-                        azcam.log(e)
+                        senschar.log(e)
 
                     response = {
                         "message": "Finished",
@@ -195,12 +191,12 @@ class WebServer(object):
                 qpars = request.query_params
 
                 if self.logcommands:
-                    azcam.log(url, prefix="Web-> ")
+                    senschar.log(url, prefix="Web-> ")
 
                 reply = self.web_command(url, qpars)
 
                 if self.logcommands:
-                    azcam.log(reply, prefix="---->   ")
+                    senschar.log(reply, prefix="---->   ")
 
                 return JSONResponse(reply)
 
@@ -236,7 +232,7 @@ class WebServer(object):
         Stops command server running in thread.
         """
 
-        azcam.log("Stopping the webserver is not supported")
+        senschar.log("Stopping the webserver is not supported")
 
         return
 
@@ -248,9 +244,9 @@ class WebServer(object):
         self.initialize()
 
         if self.port is None:
-            self.port = azcam.db.cmdserver.port + 1
+            self.port = senschar.db.cmdserver.port + 1
 
-        azcam.log(f"Starting webserver - listening on port {self.port}")
+        senschar.log(f"Starting webserver - listening on port {self.port}")
 
         # uvicorn.run(self.app)
 
@@ -277,11 +273,11 @@ class WebServer(object):
             method = url
             kwargs = qpars._dict
 
-            caller = getattr(azcam.db.api, method)
+            caller = getattr(senschar.db.api, method)
             reply = caller() if kwargs is None else caller(**kwargs)
 
         except Exception as e:
-            azcam.log(e)
+            senschar.log(e)
             reply = f"invalid API command: {url}"
 
         # generic response

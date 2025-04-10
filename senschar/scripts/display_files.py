@@ -5,9 +5,9 @@ Display a sequence of files interactively on ds9
 import os
 import sys
 
-import azcam
-import azcam.utils
-from azcam_console.utils import beep
+import senschar
+import senschar.utils
+from senschar_console.utils import beep
 
 
 def display_files():
@@ -24,18 +24,18 @@ def display_files():
             f = os.path.join(root, filename)
             print(f)
 
-            azcam.db.tools["display"].display(f)
-            azcam.db.tools["display"].zoom(0)
+            senschar.db.tools["display"].display(f)
+            senschar.db.tools["display"].zoom(0)
 
             print("Press Enter to continue, s to snap, q to quit")
-            key = azcam.utils.check_keyboard(1)
+            key = senschar.util.check_keyboard(1)
 
             if key.lower() == "q":
                 QUIT = 1
                 break
 
             elif key == "s":
-                azcam.db.tools["display"].save_image()
+                senschar.db.tools["display"].save_image()
 
     return
 

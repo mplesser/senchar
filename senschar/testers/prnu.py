@@ -5,12 +5,12 @@ import math
 
 import numpy
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam_console.utils
-import azcam.image
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar_console.utils
+import senschar.image
+from senschar_console.testers.basetester import Tester
 
 
 class Prnu(Tester):
@@ -51,81 +51,83 @@ class Prnu(Tester):
         ExposureTimes and Wavelengths are read from ExposuresFile text file.
         """
 
-        azcam.log("Acquiring PRNU sequence")
+        senschar.log("Acquiring PRNU sequence")
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
+        senschar.util.save_imagepars(impars)
 
         # create new subfolder
-        currentfolder, subfolder = azcam_console.utils.make_file_folder("prnu")
-        azcam.db.parameters.set_par("imagefolder", subfolder)
+        currentfolder, subfolder = senschar_console.utils.make_file_folder("prnu")
+        senschar.db.parameters.set_par("imagefolder", subfolder)
 
         # clear device
-        azcam.db.parameters.set_par("imagetest", 1)
+        senschar.db.parameters.set_par("imagetest", 1)
         imname = "test.fits"
-        azcam.db.tools["exposure"].test(0)
-        bin1 = int(azcam.fits.get_keyword(imname, "CCDBIN1"))
-        bin2 = int(azcam.fits.get_keyword(imname, "CCDBIN2"))
+        senschar.db.tools["exposure"].test(0)
+        bin1 = int(senschar.fits.get_keyword(imname, "CCDBIN1"))
+        bin2 = int(senschar.fits.get_keyword(imname, "CCDBIN2"))
         binning = bin1 * bin2
 
-        azcam.db.parameters.set_par("imageroot", "prnu.")  # for automatic data analysis
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par(
+            "imageroot", "prnu."
+        )  # for automatic data analysis
+        senschar.db.parameters.set_par(
             "imageincludesequencenumber", 1
         )  # use sequence numbers
-        azcam.db.parameters.set_par("imageautoname", 0)  # manually set name
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par("imageautoname", 0)  # manually set name
+        senschar.db.parameters.set_par(
             "imageautoincrementsequencenumber", 1
         )  # inc sequence numbers
-        azcam.db.parameters.set_par("imagetest", 0)  # turn off TestImage
+        senschar.db.parameters.set_par("imagetest", 0)  # turn off TestImage
 
         # bias image
-        azcam.db.parameters.set_par("imagetype", "zero")
-        filename = os.path.basename(azcam.db.tools["exposure"].get_filename())
-        azcam.log("Taking PRNU bias: %s" % filename)
-        azcam.db.tools["exposure"].expose(0, "zero", "PRNU bias")
+        senschar.db.parameters.set_par("imagetype", "zero")
+        filename = os.path.basename(senschar.db.tools["exposure"].get_filename())
+        senschar.log("Taking PRNU bias: %s" % filename)
+        senschar.db.tools["exposure"].expose(0, "zero", "PRNU bias")
 
         # exposure times
         waves = list(self.exposure_levels.keys())
         waves.sort()
         if self.mean_count_goal > 0:
-            if azcam.db.tools["detcal"].is_valid:
+            if senschar.db.tools["detcal"].is_valid:
                 for wave in waves:
-                    meancounts = azcam.db.tools["detcal"].mean_counts[wave]
+                    meancounts = senschar.db.tools["detcal"].mean_counts[wave]
                     self.exposure_levels[wave] = (
                         (self.mean_count_goal / meancounts)
                         / binning
                         * (
-                            azcam.db.tools["gain"].system_gain[0]
-                            / azcam.db.tools["detcal"].system_gain[0]
+                            senschar.db.tools["gain"].system_gain[0]
+                            / senschar.db.tools["detcal"].system_gain[0]
                         )
                     )
 
             else:
-                azcam.log("invalid detcal data, using fixed exposure times")
+                senschar.log("invalid detcal data, using fixed exposure times")
 
         for wave in waves:
             wavelength = float(wave)
             exposuretime = self.exposure_levels[wave]
 
             if wavelength > 0:
-                azcam.log(f"Moving to wavelength: {int(wavelength)}")
-                azcam.db.tools["instrument"].set_wavelength(wavelength)
-                wave = azcam.db.tools["instrument"].get_wavelength()
+                senschar.log(f"Moving to wavelength: {int(wavelength)}")
+                senschar.db.tools["instrument"].set_wavelength(wavelength)
+                wave = senschar.db.tools["instrument"].get_wavelength()
                 wave = int(wave)
-                azcam.log(f"Current wavelength: {wave}")
-            filename = os.path.basename(azcam.db.tools["exposure"].get_filename())
-            azcam.log(
+                senschar.log(f"Current wavelength: {wave}")
+            filename = os.path.basename(senschar.db.tools["exposure"].get_filename())
+            senschar.log(
                 f"Taking PRNU image for {exposuretime:.3f} seconds at {wavelength:.1f} nm"
             )
-            azcam.db.tools["exposure"].expose(
+            senschar.db.tools["exposure"].expose(
                 exposuretime, self.exposure_type, f"PRNU image {wavelength:.1f} nm"
             )
 
         # finish
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
-        azcam.log("PRNU sequence finished")
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
+        senschar.log("PRNU sequence finished")
 
         return
 
@@ -134,7 +136,7 @@ class Prnu(Tester):
         Analyze an existing PRNU image sequence.
         """
 
-        azcam.log("Analyzing PRNU sequence")
+        senschar.log("Analyzing PRNU sequence")
 
         rootname = self.root_name
         self.grade = "UNDEFINED"
@@ -142,19 +144,19 @@ class Prnu(Tester):
         self.images = []
 
         # analysis subfolder
-        startingfolder, subfolder = azcam_console.utils.make_file_folder(subfolder)
-        azcam.log("Making copy of image files for analysis")
+        startingfolder, subfolder = senschar_console.utils.make_file_folder(subfolder)
+        senschar.log("Making copy of image files for analysis")
         for filename in glob.glob(os.path.join(startingfolder, "*.fits")):
             shutil.copy(filename, subfolder)
-        azcam.utils.curdir(subfolder)
-        currentfolder = azcam.utils.curdir()
-        _, StartingSequence = azcam_console.utils.find_file_in_sequence(rootname)
+        senschar.util.curdir(subfolder)
+        currentfolder = senschar.util.curdir()
+        _, StartingSequence = senschar_console.utils.find_file_in_sequence(rootname)
         SequenceNumber = StartingSequence
 
         # bias image (first in sequence)
         zerofilename = rootname + "%04d" % StartingSequence
         zerofilename = os.path.join(currentfolder, zerofilename) + ".fits"
-        zerofilename = azcam.utils.make_image_filename(zerofilename)
+        zerofilename = senschar.util.make_image_filename(zerofilename)
 
         if self.bias_image_in_sequence:
             SequenceNumber += 1
@@ -164,40 +166,40 @@ class Prnu(Tester):
         )
 
         # get gain values
-        if azcam.db.tools["gain"].is_valid:
-            self.system_gain = azcam.db.tools["gain"].system_gain
+        if senschar.db.tools["gain"].is_valid:
+            self.system_gain = senschar.db.tools["gain"].system_gain
         else:
-            azcam.log("WARNING: no gain values found for scaling")
-            numext, _, _ = azcam.fits.get_extensions(zerofilename)
+            senschar.log("WARNING: no gain values found for scaling")
+            numext, _, _ = senschar.fits.get_extensions(zerofilename)
             self.system_gain = numext * [1.0]
 
         # loop over files
         self.grades = {}
         while os.path.exists(nextfile):
-            wavelength = azcam.fits.get_keyword(nextfile, "WAVLNGTH")
+            wavelength = senschar.fits.get_keyword(nextfile, "WAVLNGTH")
             wavelength = int(float(wavelength) + 0.5)
-            azcam.log("Processing image %s" % os.path.basename(nextfile))
+            senschar.log("Processing image %s" % os.path.basename(nextfile))
 
             # colbias
             if self.overscan_correct:
-                azcam.fits.colbias(nextfile, fit_order=self.fit_order)
+                senschar.fits.colbias(nextfile, fit_order=self.fit_order)
 
             # "debias" correct with residuals after colbias
             if self.zero_correct:
-                debiased = azcam.db.tools["bias"].debiased_filename
+                debiased = senschar.db.tools["bias"].debiased_filename
                 biassub = "biassub.fits"
-                azcam.fits.sub(nextfile, debiased, biassub)
+                senschar.fits.sub(nextfile, debiased, biassub)
                 os.remove(nextfile)
                 os.rename(biassub, nextfile)
 
             # scale to electrons by system gain
-            prnuimage = azcam.image.Image(nextfile)
+            prnuimage = senschar.image.Image(nextfile)
 
             if self.overscan_correct:
                 prnuimage.set_scaling(self.system_gain, None)
             else:
                 prnuimage.set_scaling(
-                    self.system_gain, azcam.db.tools["gain"].zero_mean
+                    self.system_gain, senschar.db.tools["gain"].zero_mean
                 )
             prnuimage.assemble(1)
             prnuimage.save_data_format = -32
@@ -205,12 +207,12 @@ class Prnu(Tester):
 
             # create masked array
             self.masked_image = numpy.ma.array(prnuimage.buffer, mask=False)
-            defects = azcam.db.tools["defects"]
+            defects = senschar.db.tools["defects"]
             defects.mask_defects(self.masked_image)
 
             # apply defects mask
             self.masked_image = numpy.ma.array(prnuimage.buffer, mask=False)
-            defects = azcam.db.tools["defects"]
+            defects = senschar.db.tools["defects"]
             defects.mask_edges(self.masked_image)
 
             # optionally use ROI
@@ -244,7 +246,7 @@ class Prnu(Tester):
                 prnu * 100,
                 GRADE,
             )
-            azcam.log(s)
+            senschar.log(s)
 
             SequenceNumber = SequenceNumber + 1
             nextfile = (
@@ -261,7 +263,7 @@ class Prnu(Tester):
         if not self.grade_sensor:
             self.grade = "UNDEFINED"
 
-        azcam.log(s)
+        senschar.log(s)
 
         # define dataset
         self.dataset = {
@@ -283,7 +285,7 @@ class Prnu(Tester):
             shutil.copy(f, startingfolder)
 
         # write data file
-        azcam.utils.curdir(startingfolder)
+        senschar.util.curdir(startingfolder)
         self.write_datafile()
         if self.create_reports:
             self.report()

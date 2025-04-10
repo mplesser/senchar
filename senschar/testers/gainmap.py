@@ -5,13 +5,13 @@ import shutil
 import numpy
 from astropy.io import fits as pyfits
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam.image
-import azcam_console.utils
-import azcam_console.plot
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar.image
+import senschar_console.utils
+import senschar_console.plot
+from senschar_console.testers.basetester import Tester
 
 
 class GainMap(Tester):
@@ -76,69 +76,71 @@ class GainMap(Tester):
         These are used to generate a PTC point at every pixel.
         """
 
-        azcam.log("Acquiring gainmap sequence")
+        senschar.log("Acquiring gainmap sequence")
 
         if self.exposure_time == -1:
-            et = azcam.db.tools["exposure"].get_exposuretime()
-            azcam.log(f"Exposure time not specified, using current value of {et:0.3f}")
+            et = senschar.db.tools["exposure"].get_exposuretime()
+            senschar.log(
+                f"Exposure time not specified, using current value of {et:0.3f}"
+            )
         else:
             et = self.exposure_time
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
+        senschar.util.save_imagepars(impars)
 
         # create new subfolder
         if self.overwrite:
             if os.path.exists("gainmap"):
                 shutil.rmtree("gainmap")
-        currentfolder, subfolder = azcam_console.utils.make_file_folder("gainmap")
-        azcam.db.parameters.set_par("imagefolder", subfolder)
+        currentfolder, subfolder = senschar_console.utils.make_file_folder("gainmap")
+        senschar.db.parameters.set_par("imagefolder", subfolder)
         self.imagefolder = subfolder
 
-        azcam.db.parameters.set_par("imageincludesequencenumber", 1)
-        azcam.db.parameters.set_par("imageautoincrementsequencenumber", 1)
-        azcam.db.parameters.set_par("imageautoname", 0)  # manually set name
-        azcam.db.parameters.set_par("imagetest", 0)  # turn off TestImage
-        azcam.db.parameters.set_par("imageoverwrite", 1)
+        senschar.db.parameters.set_par("imageincludesequencenumber", 1)
+        senschar.db.parameters.set_par("imageautoincrementsequencenumber", 1)
+        senschar.db.parameters.set_par("imageautoname", 0)  # manually set name
+        senschar.db.parameters.set_par("imagetest", 0)  # turn off TestImage
+        senschar.db.parameters.set_par("imageoverwrite", 1)
 
         # set wavelength
         if self.wavelength > 0:
             wave = int(self.wavelength)
-            wave1 = azcam.db.tools["instrument"].get_wavelength()
+            wave1 = senschar.db.tools["instrument"].get_wavelength()
             wave1 = int(wave1)
             if wave1 != wave:
-                azcam.log(f"Setting wavelength to {wave} nm")
-                azcam.db.tools["instrument"].set_wavelength(wave)
-                wave1 = azcam.db.tools["instrument"].get_wavelength()
+                senschar.log(f"Setting wavelength to {wave} nm")
+                senschar.db.tools["instrument"].set_wavelength(wave)
+                wave1 = senschar.db.tools["instrument"].get_wavelength()
                 wave1 = int(wave1)
-            azcam.log(f"Current wavelength is {wave1} nm")
+            senschar.log(f"Current wavelength is {wave1} nm")
 
         # clear device
         if self.clear_arrray:
-            azcam.db.tools["exposure"].test(0)
+            senschar.db.tools["exposure"].test(0)
 
         # bias images
-        azcam.db.parameters.set_par("imageroot", "bias.")
+        senschar.db.parameters.set_par("imageroot", "bias.")
         for loop in range(self.number_bias_images):
-            azcam.db.parameters.set_par("imagetype", "zero")
-            azcam.log(f"Taking bias exposure {loop+1}/{self.number_bias_images}")
-            azcam.db.tools["exposure"].expose(0, "zero", "Gainmap bias frame")
+            senschar.db.parameters.set_par("imagetype", "zero")
+            senschar.log(f"Taking bias exposure {loop+1}/{self.number_bias_images}")
+            senschar.db.tools["exposure"].expose(0, "zero", "Gainmap bias frame")
 
         # flat images
-        azcam.db.parameters.set_par("imageroot", "gainmap.")
+        senschar.db.parameters.set_par("imageroot", "gainmap.")
         for loop in range(self.number_flat_images):
-            azcam.db.parameters.set_par("imagetype", self.exposure_type)
-            azcam.log(f"Taking flats {loop+1}/{self.number_flat_images}")
-            azcam.db.tools["exposure"].expose(
+            senschar.db.parameters.set_par("imagetype", self.exposure_type)
+            senschar.log(f"Taking flats {loop+1}/{self.number_flat_images}")
+            senschar.db.tools["exposure"].expose(
                 et, self.exposure_type, f"Gainmap frame {loop}"
             )
-            azcam.log(f"Image {loop} finished")
+            senschar.log(f"Image {loop} finished")
 
         # finish
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
-        azcam.log("Gainmap sequence finished")
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
+        senschar.log("Gainmap sequence finished")
 
         return
 
@@ -147,13 +149,13 @@ class GainMap(Tester):
         Analyze a bias image and multiple flat field images to generate a PTC point at every pixel.
         """
 
-        azcam.log("Analyzing gainmap sequence")
+        senschar.log("Analyzing gainmap sequence")
 
-        startingfolder = azcam.utils.curdir()
+        startingfolder = senschar.util.curdir()
 
         # get list of bias images
         rootname = "bias."
-        _, starting_sequence = azcam_console.utils.find_file_in_sequence(rootname)
+        _, starting_sequence = senschar_console.utils.find_file_in_sequence(rootname)
         sequence_number = starting_sequence
         self.bias_filenames = []
         while True:
@@ -163,13 +165,13 @@ class GainMap(Tester):
             )
             if not os.path.exists(biasfile):
                 break
-            biasfile = azcam.utils.fix_path(biasfile)
+            biasfile = senschar.util.fix_path(biasfile)
             self.bias_filenames.append(biasfile)
             sequence_number += 1
 
         # get list of all flat images
         rootname = "gainmap."
-        _, starting_sequence = azcam_console.utils.find_file_in_sequence(rootname)
+        _, starting_sequence = senschar_console.utils.find_file_in_sequence(rootname)
         sequence_number = starting_sequence
         self.flat_filenames = []
         while True:
@@ -179,11 +181,11 @@ class GainMap(Tester):
             )
             if not os.path.exists(flatfile):
                 break
-            flatfile = azcam.utils.fix_path(flatfile)
+            flatfile = senschar.util.fix_path(flatfile)
             self.flat_filenames.append(flatfile)
             sequence_number += 1
 
-        NumExt, _, _ = azcam.fits.get_extensions(self.bias_filenames[0])
+        NumExt, _, _ = senschar.fits.get_extensions(self.bias_filenames[0])
         NumExt = max(1, NumExt)
 
         # these will be mean values if more than one sequence is analyzed
@@ -198,14 +200,14 @@ class GainMap(Tester):
         # make assembled bias images
         self.bias_images = []
         for frame in self.bias_filenames:
-            im = azcam.image.Image(frame)
+            im = senschar.image.Image(frame)
             im.assemble(1)  # assembled an trim overscan
             self.bias_images.append(im)
 
         # make assembled flat images
         self.flat_images = []
         for frame in self.flat_filenames:
-            im = azcam.image.Image(frame)
+            im = senschar.image.Image(frame)
             im.assemble(1)  # assembled an trim overscan
             self.flat_images.append(im)
 
@@ -231,23 +233,23 @@ class GainMap(Tester):
         self.gain_sdev = self.gainmap_image.std()
 
         # outputs
-        azcam.log(f"Mean gain is {self.gain_mean:0.02f}")
-        azcam.log(f"Minimum gain is {self.gain_min:0.02f}")
-        azcam.log(f"Maximum gain is {self.gain_max:0.02f}")
-        azcam.log(f"Median gain is {self.gain_median:0.02f}")
-        azcam.log(f"Gain sdev is {self.gain_sdev:0.02f}")
+        senschar.log(f"Mean gain is {self.gain_mean:0.02f}")
+        senschar.log(f"Minimum gain is {self.gain_min:0.02f}")
+        senschar.log(f"Maximum gain is {self.gain_max:0.02f}")
+        senschar.log(f"Median gain is {self.gain_median:0.02f}")
+        senschar.log(f"Gain sdev is {self.gain_sdev:0.02f}")
 
-        azcam_console.plot.plt.imshow(
+        senschar_console.plot.plt.imshow(
             self.gainmap_image,
             cmap="gray",
             origin="lower",
             vmin=self.gain_mean - self.gain_sdev,
             vmax=self.gain_mean + self.gain_sdev,
         )
-        azcam_console.plot.plt.title("Gain Map")
-        fignum = azcam_console.plot.plt.gcf().number
-        azcam_console.plot.save_figure(fignum, self.gainmap_plotfile)
-        azcam_console.plot.move_window(fignum)
+        senschar_console.plot.plt.title("Gain Map")
+        fignum = senschar_console.plot.plt.gcf().number
+        senschar_console.plot.save_figure(fignum, self.gainmap_plotfile)
+        senschar_console.plot.move_window(fignum)
 
         # create gainmap FITS file
         hdul = pyfits.HDUList()

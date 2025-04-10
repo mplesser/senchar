@@ -1,9 +1,9 @@
 import json
 
-import azcam
-import azcam_console.console
-from azcam.tools.tools import Tools
-from azcam_console.testers.report import Report
+import senschar
+import senschar_console.console
+from senschar.tools.tools import Tools
+from senschar_console.testers.report import Report
 
 
 class Tester(Tools, Report):
@@ -105,7 +105,7 @@ class Tester(Tools, Report):
         """
 
         if filename == "prompt":
-            f = azcam_console.utils.file_browser(
+            f = senschar_console.utils.file_browser(
                 self.data_file, [("data files", ("*.txt"))], Label="Select data file"
             )
             if f is not None and f != "":

@@ -1,5 +1,5 @@
 """
-Quantum Efficiency (QE) tester for azcam.
+Quantum Efficiency (QE) tester for senschar.
 This version uses Power Meter (not diodes) for calibration.
 """
 
@@ -9,12 +9,12 @@ import shutil
 
 import numpy
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam.image
-import azcam_console.plot
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar.image
+import senschar_console.plot
+from senschar_console.testers.basetester import Tester
 
 
 class QE(Tester):
@@ -86,63 +86,67 @@ class QE(Tester):
         Assumes timing code and binning is set as desired.
         """
 
-        azcam.log("Acquiring QE sequence")
+        senschar.log("Acquiring QE sequence")
 
-        exposure, instrument, detcal = azcam_console.utils.get_tools(
+        exposure, instrument, detcal = senschar_console.utils.get_tools(
             ["exposure", "instrument", "detcal"]
         )
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
+        senschar.util.save_imagepars(impars)
 
         # create new subfolder
-        currentfolder, subfolder = azcam_console.utils.make_file_folder("qe")
-        azcam.db.parameters.set_par("imagefolder", subfolder)
+        currentfolder, subfolder = senschar_console.utils.make_file_folder("qe")
+        senschar.db.parameters.set_par("imagefolder", subfolder)
 
         # clear device
-        azcam.db.tools["exposure"].test(0)
+        senschar.db.tools["exposure"].test(0)
         imname = "test.fits"
-        bin1 = int(azcam.fits.get_keyword(imname, "CCDBIN1"))
-        bin2 = int(azcam.fits.get_keyword(imname, "CCDBIN2"))
+        bin1 = int(senschar.fits.get_keyword(imname, "CCDBIN1"))
+        bin2 = int(senschar.fits.get_keyword(imname, "CCDBIN2"))
         binning = bin1 * bin2
 
-        azcam.db.parameters.set_par("imageroot", "qe.")  # for automatic data analysis
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par(
+            "imageroot", "qe."
+        )  # for automatic data analysis
+        senschar.db.parameters.set_par(
             "imageincludesequencenumber", 1
         )  # use sequence numbers
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par(
             "imagesequencenumber", 1
         )  # start at sequence number 1
-        azcam.db.parameters.set_par("imageautoname", 0)  # manually set name
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par("imageautoname", 0)  # manually set name
+        senschar.db.parameters.set_par(
             "imageautoincrementsequencenumber", 1
         )  # inc sequence numbers
-        azcam.db.parameters.set_par("imagetest", 0)  # turn off TestImage
+        senschar.db.parameters.set_par("imagetest", 0)  # turn off TestImage
 
         exposure.roi_reset()  # use entire device
 
         # get exposure times
         if self.use_exposure_levels:
-            azcam.log("Using exposure_levels")
+            senschar.log("Using exposure_levels")
 
             self.exposure_times = {}  # reset
             for w in self.exposure_levels:
-                meancounts = azcam.db.tools["detcal"].mean_counts[w]
+                meancounts = senschar.db.tools["detcal"].mean_counts[w]
                 et = self.exposure_levels[w] / meancounts / binning
                 et = et * (
-                    azcam.db.tools["gain"].system_gain[0]
-                    / azcam.db.tools["detcal"].system_gain[0]
+                    senschar.db.tools["gain"].system_gain[0]
+                    / senschar.db.tools["detcal"].system_gain[0]
                 )
 
                 self.exposure_times[w] = et
 
         else:
-            azcam.log("Using exposure_times")
+            senschar.log("Using exposure_times")
 
         # take bias image
-        azcam.db.parameters.set_par("imageroot", "qe.")
-        azcam.log("Taking bias image %s..." % os.path.basename(exposure.get_filename()))
+        senschar.db.parameters.set_par("imageroot", "qe.")
+        senschar.log(
+            "Taking bias image %s..." % os.path.basename(exposure.get_filename())
+        )
 
         exposure.expose(0, "zero", "QE bias")
 
@@ -153,7 +157,7 @@ class QE(Tester):
             title = f"{wave} nm QE flat for {etime} secs"
             instrument.set_wavelength(wave)
 
-            azcam.log(
+            senschar.log(
                 f"Taking {wave} nm QE image for {etime:0.03f}seconds: {os.path.basename(exposure.get_filename())}"
             )
 
@@ -176,8 +180,8 @@ class QE(Tester):
             pass
 
         # finish
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
 
         return
 
@@ -190,7 +194,7 @@ class QE(Tester):
         h = 6.62607015e-34  # J⋅s
         c = 2.99792458e8  # m/s
 
-        azcam.log("Analyzing QE sequence")
+        senschar.log("Analyzing QE sequence")
 
         rootname = "qe."
         subfolder = "analysis"
@@ -210,34 +214,34 @@ class QE(Tester):
                 self.diode_power.append(float(tokens[1]))
 
         # copy all image files to analysis folder
-        startingfolder, subfolder = azcam_console.utils.make_file_folder(subfolder)
-        azcam.log("Making copy of image files for analysis")
+        startingfolder, subfolder = senschar_console.utils.make_file_folder(subfolder)
+        senschar.log("Making copy of image files for analysis")
         for filename in glob.glob(os.path.join(startingfolder, "*.fits")):
             shutil.copy(filename, subfolder)
 
-        azcam.utils.curdir(subfolder)
+        senschar.util.curdir(subfolder)
 
-        _, StartingSequence = azcam_console.utils.find_file_in_sequence(rootname)
+        _, StartingSequence = senschar_console.utils.find_file_in_sequence(rootname)
         SequenceNumber = StartingSequence
 
         # get gain
-        if azcam.db.tools["gain"].is_valid:
-            self.system_gain = azcam.db.tools["gain"].system_gain
+        if senschar.db.tools["gain"].is_valid:
+            self.system_gain = senschar.db.tools["gain"].system_gain
         else:
-            azcam.log("WARNING: no gain values found for scaling")
+            senschar.log("WARNING: no gain values found for scaling")
 
         # bias level
         zerofilename = rootname + "%04d" % SequenceNumber
         zerofilename = os.path.join(subfolder, zerofilename) + ".fits"
-        zmeans = azcam.fits.mean(zerofilename)
+        zmeans = senschar.fits.mean(zerofilename)
 
         try:
-            bin1 = int(azcam.fits.get_keyword(zerofilename, "CCDBIN1"))
-            bin2 = int(azcam.fits.get_keyword(zerofilename, "CCDBIN2"))
+            bin1 = int(senschar.fits.get_keyword(zerofilename, "CCDBIN1"))
+            bin2 = int(senschar.fits.get_keyword(zerofilename, "CCDBIN2"))
             binning = bin1 * bin2
-            azcam.log(f"Binning is {binning} pixels")
+            senschar.log(f"Binning is {binning} pixels")
         except Exception as e:
-            azcam.log(e)
+            senschar.log(e)
             binning = 1  # assume no keyword means no binning
 
         nextfile = zerofilename  # just to start loop
@@ -266,19 +270,19 @@ class QE(Tester):
             meantemp = -999
 
             try:
-                exptime = float(azcam.fits.get_keyword(qefilename, "EXPTIME"))
-                wave = float(azcam.fits.get_keyword(qefilename, "WAVLNGTH"))
+                exptime = float(senschar.fits.get_keyword(qefilename, "EXPTIME"))
+                wave = float(senschar.fits.get_keyword(qefilename, "WAVLNGTH"))
                 wave = int(float(wave) + 0.5)
             except Exception:
                 # try wavelength in OBJECT keyword for manual testing
-                s = azcam.fits.get_keyword(qefilename, "OBJECT")
+                s = senschar.fits.get_keyword(qefilename, "OBJECT")
                 wave = s.split(" ")[0]
                 wave = int(float(wave) + 0.5)
 
             self.exposures.append(exptime)
 
             try:
-                meantemp = float(azcam.fits.get_keyword(qefilename, "CAMTEMP"))
+                meantemp = float(senschar.fits.get_keyword(qefilename, "CAMTEMP"))
             except Exception:
                 meantemp = -999.0
 
@@ -296,12 +300,12 @@ class QE(Tester):
 
             # bias or dark correct
             if self.include_dark_images:
-                azcam.fits.sub(qefilename, darkfilename, qefilename)
+                senschar.fits.sub(qefilename, darkfilename, qefilename)
             elif self.overscan_correct:
-                azcam.fits.colbias(qefilename, fit_order=self.fit_order)
+                senschar.fits.colbias(qefilename, fit_order=self.fit_order)
 
             # scale to electrons by system gain
-            qeimage = azcam.image.Image(qefilename)
+            qeimage = senschar.image.Image(qefilename)
 
             if self.overscan_correct or self.include_dark_images:
                 qeimage.set_scaling(self.system_gain, None)
@@ -315,7 +319,7 @@ class QE(Tester):
 
             # create masked array
             self.masked_image = numpy.ma.array(qeimage.buffer, mask=False)
-            defects = azcam.db.tools["defects"]
+            defects = senschar.db.tools["defects"]
             defects.mask_defects(self.masked_image)
 
             if len(self.qeroi) == 0:
@@ -347,7 +351,7 @@ class QE(Tester):
             # global scale
             qe = qe * self.global_scale
 
-            azcam.log(f"QE [{wave} nm] = {qe:.3f}")
+            senschar.log(f"QE [{wave} nm] = {qe:.3f}")
 
             self.means.append(qemean)
 
@@ -380,7 +384,7 @@ class QE(Tester):
                 self.grade = "FAIL"
             else:
                 self.grade = "PASS"
-            azcam.log("Grade = %s" % self.grade)
+            senschar.log("Grade = %s" % self.grade)
         else:
             self.grade = "UNDEFINED"
 
@@ -416,7 +420,7 @@ class QE(Tester):
         }
 
         # write files
-        azcam.utils.curdir(startingfolder)
+        senschar.util.curdir(startingfolder)
         self.write_datafile()
         if self.create_reports:
             self.report()
@@ -440,9 +444,9 @@ class QE(Tester):
         hspace = 0.2
 
         # make figure
-        fig = azcam_console.plot.plt.figure()
+        fig = senschar_console.plot.plt.figure()
         fignum = fig.number
-        azcam_console.plot.move_window(fignum)
+        senschar_console.plot.move_window(fignum)
         if self.plot_title == "":
             fig.text(
                 0.55,
@@ -467,15 +471,15 @@ class QE(Tester):
             wspace=wspace,
             hspace=hspace,
         )
-        ax = azcam_console.plot.plt.gca()
+        ax = senschar_console.plot.plt.gca()
         ax.grid(1)
-        azcam_console.plot.plt.xlabel("Wavelength [nm]", fontsize=bigfont)
-        azcam_console.plot.plt.ylabel("Measured QE", fontsize=bigfont)
+        senschar_console.plot.plt.xlabel("Wavelength [nm]", fontsize=bigfont)
+        senschar_console.plot.plt.ylabel("Measured QE", fontsize=bigfont)
 
-        ax.yaxis.set_major_locator(azcam_console.plot.plt.MaxNLocator(11))
+        ax.yaxis.set_major_locator(senschar_console.plot.plt.MaxNLocator(11))
         x = 2 * max(self.wavelengths) - min(self.wavelengths) + 1
         x = int(x / 100.0)
-        ax.xaxis.set_major_locator(azcam_console.plot.plt.MaxNLocator(x))
+        ax.xaxis.set_major_locator(senschar_console.plot.plt.MaxNLocator(x))
 
         if self.mean_temp != -999:
             labels = [f"Mean Temp = {self.mean_temp:.0f} C"]
@@ -493,17 +497,23 @@ class QE(Tester):
         for w in waves:
             qevals.append(self.qe[w])
         if self.use_errorbars:
-            azcam_console.plot.plt.errorbar(
+            senschar_console.plot.plt.errorbar(
                 waves, [x * 100.0 for x in qevals], yerr=3.0, marker="o", ls=""
             )
         else:
-            azcam_console.plot.plt.plot(waves, [x * 100.0 for x in qevals], "bo-")
+            senschar_console.plot.plt.plot(waves, [x * 100.0 for x in qevals], "bo-")
 
         if len(self.plot_limits) == 2:
-            azcam_console.plot.plt.xlim(self.plot_limits[0][0], self.plot_limits[0][1])
-            azcam_console.plot.plt.ylim(self.plot_limits[1][0], self.plot_limits[1][1])
+            senschar_console.plot.plt.xlim(
+                self.plot_limits[0][0], self.plot_limits[0][1]
+            )
+            senschar_console.plot.plt.ylim(
+                self.plot_limits[1][0], self.plot_limits[1][1]
+            )
         elif len(self.plot_limits) == 1:
-            azcam_console.plot.plt.xlim(self.plot_limits[0][0], self.plot_limits[0][1])
+            senschar_console.plot.plt.xlim(
+                self.plot_limits[0][0], self.plot_limits[0][1]
+            )
         else:
             pass
 
@@ -513,13 +523,13 @@ class QE(Tester):
                 if self.qe_specs[wave] > 0:
                     x = wave
                     y = self.qe_specs[wave] * 100.0
-                    azcam_console.plot.plt.plot(
+                    senschar_console.plot.plt.plot(
                         x, y, ls="", marker="_", markersize=5, color="red"
                     )
 
         # save figure
-        azcam_console.plot.plt.show()
-        azcam_console.plot.save_figure(fignum, "qe.png")
+        senschar_console.plot.plt.show()
+        senschar_console.plot.save_figure(fignum, "qe.png")
 
         return
 

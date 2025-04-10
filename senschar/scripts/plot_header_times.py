@@ -4,9 +4,9 @@ Read and plot image header times.
 
 import sys
 
-import azcam
-import azcam_console.plot
-import azcam.fits
+import senschar
+import senschar_console.plot
+import senschar.fits
 
 
 def plot_header_times(fileroot="itl.", starting_sequence=1, keyword="UT"):
@@ -16,10 +16,10 @@ def plot_header_times(fileroot="itl.", starting_sequence=1, keyword="UT"):
     """
 
     # inputs
-    fileroot = azcam.db.parameters.get_local_par(
+    fileroot = senschar.db.parameters.get_local_par(
         "plot_header_times", "fileroot", "prompt", "Enter file root name", fileroot
     )
-    starting_sequence = azcam.db.parameters.get_local_par(
+    starting_sequence = senschar.db.parameters.get_local_par(
         "plot_header_times",
         "starting_sequence",
         "prompt",
@@ -35,7 +35,7 @@ def plot_header_times(fileroot="itl.", starting_sequence=1, keyword="UT"):
     while True:
         img = fileroot + "%.4u" % i
         try:
-            ht = azcam.fits.get_keyword(img, keyword)
+            ht = senschar.fits.get_keyword(img, keyword)
         except IOError:
             break
         t = ht.split(":")
@@ -48,32 +48,32 @@ def plot_header_times(fileroot="itl.", starting_sequence=1, keyword="UT"):
         i = i + 1
 
     # plot
-    fig, ax = azcam_console.plot.plt.subplots(constrained_layout=True)
+    fig, ax = senschar_console.plot.plt.subplots(constrained_layout=True)
     fignum = fig.number
-    azcam_console.plot.move_window(fignum)
-    azcam_console.plot.plt.title("%s in Header" % keyword)
-    azcam_console.plot.plt.xlabel("Image Number")
-    azcam_console.plot.plt.ylabel("Relative Time (sec)")
+    senschar_console.plot.move_window(fignum)
+    senschar_console.plot.plt.title("%s in Header" % keyword)
+    senschar_console.plot.plt.xlabel("Image Number")
+    senschar_console.plot.plt.ylabel("Relative Time (sec)")
     ax.grid(1)
-    azcam_console.plot.plt.plot(times)
-    azcam_console.plot.save_figure(fignum, "%s_relative.png" % keyword)
+    senschar_console.plot.plt.plot(times)
+    senschar_console.plot.save_figure(fignum, "%s_relative.png" % keyword)
 
     # make differences
     for j in range(0, len(times) - 1):
         times[j] = times[j + 1] - times[j]
     times = times[:-1]
-    fig, ax = azcam_console.plot.plt.subplots(constrained_layout=True)
+    fig, ax = senschar_console.plot.plt.subplots(constrained_layout=True)
     fignum = fig.number
-    azcam_console.plot.move_window(fignum)
-    azcam_console.plot.plt.title("%s Difference" % keyword)
-    azcam_console.plot.plt.xlabel("Image Number")
-    azcam_console.plot.plt.ylabel("Relative Time (sec)")
+    senschar_console.plot.move_window(fignum)
+    senschar_console.plot.plt.title("%s Difference" % keyword)
+    senschar_console.plot.plt.xlabel("Image Number")
+    senschar_console.plot.plt.ylabel("Relative Time (sec)")
     ax.grid(1)
-    azcam_console.plot.plt.plot(times)
-    azcam_console.plot.update()
-    azcam_console.plot.save_figure(fignum, "%s_difference.png" % keyword)
+    senschar_console.plot.plt.plot(times)
+    senschar_console.plot.update()
+    senschar_console.plot.save_figure(fignum, "%s_difference.png" % keyword)
 
-    azcam_console.plot.plt.show()
+    senschar_console.plot.plt.show()
 
     return
 

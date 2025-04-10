@@ -10,11 +10,11 @@ import scipy.ndimage.filters
 import scipy.optimize
 from astropy.io import fits as pyfits
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam_console.plot
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar_console.plot
+from senschar_console.testers.basetester import Tester
 
 # constants
 CON1 = 2.0 * numpy.sqrt(2.0 * numpy.log(2.0))  # 2.355 for sigma <=> FWHM
@@ -110,55 +110,61 @@ class Fe55(Tester):
         ExposureTime is the exposure time of x-ray image in seconds.
         """
 
-        azcam.log("Acquiring Fe-55 sequence")
+        senschar.log("Acquiring Fe-55 sequence")
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
+        senschar.util.save_imagepars(impars)
 
         # create new subfolder
-        currentfolder, subfolder = azcam_console.utils.make_file_folder("fe55")
-        azcam.db.parameters.set_par("imagefolder", subfolder)
+        currentfolder, subfolder = senschar_console.utils.make_file_folder("fe55")
+        senschar.db.parameters.set_par("imagefolder", subfolder)
 
-        azcam.db.parameters.set_par("imageroot", "fe55.")  # for automatic data analysis
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par(
+            "imageroot", "fe55."
+        )  # for automatic data analysis
+        senschar.db.parameters.set_par(
             "imageincludesequencenumber", 1
         )  # use sequence numbers
-        azcam.db.parameters.set_par("imageautoname", 0)  # manually set name
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par("imageautoname", 0)  # manually set name
+        senschar.db.parameters.set_par(
             "imageautoincrementsequencenumber", 1
         )  # inc sequence numbers
-        azcam.db.parameters.set_par("imagetest", 0)  # turn off TestImage
+        senschar.db.parameters.set_par("imagetest", 0)  # turn off TestImage
 
         # clear device
-        azcam.db.tools["exposure"].test(0)
+        senschar.db.tools["exposure"].test(0)
 
         # loop through images
         for imgnum in range(self.number_images_acquire):
-            azcam.log(
+            senschar.log(
                 "Image set %d of %d for %.3f seconds..."
                 % (imgnum + 1, self.number_images_acquire, self.exposure_time)
             )
 
             # take bias image
-            azcam.db.parameters.set_par("imagetype", "zero")
-            azcam.log("Taking bias image")
-            azcam.db.tools["exposure"].expose(0, "zero", "bias image")
+            senschar.db.parameters.set_par("imagetype", "zero")
+            senschar.log("Taking bias image")
+            senschar.db.tools["exposure"].expose(0, "zero", "bias image")
 
             # take x-ray image
-            azcam.db.parameters.set_par("imagetype", "fe55")
-            azcam.log("Taking Fe-55 image")
-            azcam.db.tools["exposure"].expose(self.exposure_time, "fe55", "Fe55 image")
+            senschar.db.parameters.set_par("imagetype", "fe55")
+            senschar.log("Taking Fe-55 image")
+            senschar.db.tools["exposure"].expose(
+                self.exposure_time, "fe55", "Fe55 image"
+            )
 
         if self.acquire_darks:
-            azcam.db.parameters.set_par("imagetype", "dark")
-            azcam.log("Taking dark image")
-            azcam.db.tools["exposure"].expose(self.exposure_time, "dark", "dark image")
+            senschar.db.parameters.set_par("imagetype", "dark")
+            senschar.log("Taking dark image")
+            senschar.db.tools["exposure"].expose(
+                self.exposure_time, "dark", "dark image"
+            )
 
         # finish
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
-        azcam.log("Fe-55 finished")
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
+        senschar.log("Fe-55 finished")
 
         return
 
@@ -167,7 +173,7 @@ class Fe55(Tester):
         Analyze an exisiting Fe55 image sequence or a single image.
         """
 
-        azcam.log("Analyzing fe55 sequence")
+        senschar.log("Analyzing fe55 sequence")
 
         rootname = "fe55."
         subfolder = "analysis"
@@ -180,33 +186,33 @@ class Fe55(Tester):
         middle = (self.neighborhood_size - 1) / 2  # size should be odd
         middle = int(middle)
 
-        startingfolder = azcam.utils.curdir()
+        startingfolder = senschar.util.curdir()
 
         # create analysis subfolder
-        startingfolder, subfolder = azcam_console.utils.make_file_folder(subfolder)
+        startingfolder, subfolder = senschar_console.utils.make_file_folder(subfolder)
 
         # copy all image files to analysis folder
-        azcam.log("Making copy of image files for analysis")
+        senschar.log("Making copy of image files for analysis")
         for filename in glob.glob(os.path.join(startingfolder, "*.fits")):
             shutil.copy(filename, subfolder)
 
-        azcam.utils.curdir(
+        senschar.util.curdir(
             subfolder
         )  # move for analysis folder - assume it already exists
 
-        currentfolder = azcam.utils.curdir()
-        _, StartingSequence = azcam_console.utils.find_file_in_sequence(rootname)
+        currentfolder = senschar.util.curdir()
+        _, StartingSequence = senschar_console.utils.find_file_in_sequence(rootname)
         SequenceNumber = StartingSequence
 
         # get noise roi
-        nroi = azcam_console.utils.get_image_roi()[1]
+        nroi = senschar_console.utils.get_image_roi()[1]
         self.noise_dn = []
         self.read_noise = []
 
         # first image is a zero, use it for noise
         zerofilename = rootname + "%04d" % StartingSequence
-        zerofilename = azcam.utils.make_image_filename(zerofilename)
-        NumExt, first_ext, last_ext = azcam.fits.get_extensions(zerofilename)
+        zerofilename = senschar.util.make_image_filename(zerofilename)
+        NumExt, first_ext, last_ext = senschar.fits.get_extensions(zerofilename)
         self.num_chans = last_ext - first_ext
 
         # get overscan noise from zero
@@ -225,31 +231,31 @@ class Fe55(Tester):
         filename = (
             os.path.join(currentfolder, rootname + "%04d" % SequenceNumber) + ".fits"
         )
-        NumExt, first_ext, last_ext = azcam.fits.get_extensions(filename)
+        NumExt, first_ext, last_ext = senschar.fits.get_extensions(filename)
 
-        azcam.log("bias correct image: %s" % os.path.basename(filename))
+        senschar.log("bias correct image: %s" % os.path.basename(filename))
         zerosub = "zerosub.fits"
-        azcam.fits.sub(filename, zerofilename, zerosub)
+        senschar.fits.sub(filename, zerofilename, zerosub)
         os.remove(filename)
         os.rename(zerosub, filename)
 
         # overscan_correct image second
         if self.overscan_correct:
-            azcam.log("overscan_correct image: %s" % os.path.basename(filename))
-            azcam.fits.colbias(filename, fit_order=self.fit_order)
+            senschar.log("overscan_correct image: %s" % os.path.basename(filename))
+            senschar.fits.colbias(filename, fit_order=self.fit_order)
 
         self.grade = "UNKNOWN"
-        azcam.log("Analyzing image %s" % os.path.basename(filename))
+        senschar.log("Analyzing image %s" % os.path.basename(filename))
 
         # get image info
-        NumExt, first_ext, last_ext = azcam.fits.get_extensions(filename)
+        NumExt, first_ext, last_ext = senschar.fits.get_extensions(filename)
 
         # get this image section size
         if NumExt > 1:
             ext = 1
         else:
             ext = 0
-        reply = azcam.fits.get_section(filename, "DATASEC", ext)
+        reply = senschar.fits.get_section(filename, "DATASEC", ext)
         xedges = []
         yedges = []
         for i in range(middle + 1):
@@ -271,8 +277,8 @@ class Fe55(Tester):
         # setup
         self.number_events = []
 
-        azcam.log("neighborhood_size is %d pixels" % self.neighborhood_size)
-        azcam.log("Threshold is %.0f DN" % self.threshold)
+        senschar.log("neighborhood_size is %d pixels" % self.neighborhood_size)
+        senschar.log("Threshold is %.0f DN" % self.threshold)
 
         # data buffers for plots
         self.imbufs = []
@@ -288,14 +294,14 @@ class Fe55(Tester):
 
         # new gain estimate
         if self.gain_estimate == []:
-            self.gain_estimate = azcam.db.tools["gain"].system_gain
+            self.gain_estimate = senschar.db.tools["gain"].system_gain
             if self.gain_estimate == []:
                 self.gain_estimate = NumExt * [1.0]
 
         if self.threshold == 0:
-            if azcam.db.tools["bias"].is_valid:
+            if senschar.db.tools["bias"].is_valid:
                 self.threshold = [
-                    self.noise_threshold * sd for sd in azcam.db.tools["bias"].sdev
+                    self.noise_threshold * sd for sd in senschar.db.tools["bias"].sdev
                 ]
 
         # process each channel
@@ -308,7 +314,7 @@ class Fe55(Tester):
                     continue
 
             # get data for each channel
-            azcam.log("Analyzing channel %d " % chan)
+            senschar.log("Analyzing channel %d " % chan)
 
             # get data as [rows,cols]
             imbuf = numpy.reshape(fe55im[ext].data, [nrows, ncols])
@@ -330,8 +336,8 @@ class Fe55(Tester):
 
             # show events
             if self.show_events:
-                azcam_console.plot.plt.figure()
-                azcam_console.plot.plt.imshow(labeled, cmap="gray")
+                senschar_console.plot.plt.figure()
+                senschar_console.plot.plt.imshow(labeled, cmap="gray")
 
             # these arrays are for each channel
             xevents, yevents, zevents, fwhms, sigmas, gaussians = [], [], [], [], [], []
@@ -373,7 +379,7 @@ class Fe55(Tester):
             # get rid of outliers
             nevents = len(xevents1)
             s = "Number of raw events found = %d" % (nevents)
-            azcam.log(s)
+            senschar.log(s)
 
             m1 = (self.xray_lines["K-alpha"] / self.gain_estimate[chan]) * 0.80
             m2 = (self.xray_lines["K-alpha"] / self.gain_estimate[chan]) * 1.2
@@ -391,29 +397,29 @@ class Fe55(Tester):
 
             # trouble can happen here...
             if len(zevents) == 0:
-                azcam.log("No events in channel %d" % chan)
+                senschar.log("No events in channel %d" % chan)
                 self.event_data.append([0, 0, 0, 0, 0, 0, 0, 0])
                 self.hist_x.append(numpy.array(0))
                 self.hist_y.append(numpy.array(0))
                 self.system_gain.append(self.gain_estimate[chan])
                 continue
 
-            azcam.log("Removed %d of %d values" % (nevents - len(xevents), nevents))
+            senschar.log("Removed %d of %d values" % (nevents - len(xevents), nevents))
             nevents = len(xevents)
             s = "Total number of events = %d" % (nevents)
-            azcam.log(s)
+            senschar.log(s)
 
             # gaussian fit each event for PSF analysis
             if self.fit_psf:
                 if self.max_events != -1:  # limit events per chan
                     nevents = min(nevents, self.max_events)
                 self.number_events.append(nevents)
-                azcam.log("Fitting gaussians for %d events" % nevents)
+                senschar.log("Fitting gaussians for %d events" % nevents)
                 with warnings.catch_warnings():  # surpress warning
                     warnings.simplefilter("ignore")
                     for i in range(nevents):
                         # if i%100==0:
-                        #    azcam.log('Events remaining: %05d\r' % (nevents-i)),
+                        #    senschar.log('Events remaining: %05d\r' % (nevents-i)),
                         r1 = yevents[i] - middle
                         r2 = r1 + self.neighborhood_size
                         r1 = int(r1)
@@ -451,7 +457,7 @@ class Fe55(Tester):
                 self.mean_sigma = self.mean_sigma.append(sm)
 
                 s = "FWHM_%d = %5.3f (sigma = %.2f um)" % (chan, fm, sm)
-                azcam.log(s)
+                senschar.log(s)
 
             else:
                 sigmas = []
@@ -477,7 +483,7 @@ class Fe55(Tester):
                 )  # fwhm_a / fwhm_b
                 shape2 = numpy.array(self.event_data[chan][7]).mean()
                 self.shape.append([shape1, shape2])
-                azcam.log("Shape: %5.03f, %7.03f" % (shape1, shape2))
+                senschar.log("Shape: %5.03f, %7.03f" % (shape1, shape2))
 
             # make new image with only summed events
             events = numpy.zeros([nrows, ncols])
@@ -499,7 +505,7 @@ class Fe55(Tester):
             g = self.xray_lines["K-alpha"] / maxvalue
             self.system_gain.append(g)
             s = "Gain_%d = %.2f" % (chan, g)
-            azcam.log(s)
+            senschar.log(s)
 
             # correct readnoise
             noise = self.noise_dn[chan]
@@ -530,7 +536,7 @@ class Fe55(Tester):
             hcte = min(1.0, hcte)
             self.hcte.append(hcte)
             s = "HCTE_%d = %0.6f" % (chan, hcte)
-            azcam.log(s)
+            senschar.log(s)
 
             # VCTE line fit
             z = []
@@ -548,7 +554,7 @@ class Fe55(Tester):
             vcte = min(1.0, vcte)
             self.vcte.append(vcte)
             s = "VCTE_%d = %0.6f" % (chan, vcte)
-            azcam.log(s)
+            senschar.log(s)
 
             self.chansanalyzed += 1
 
@@ -565,7 +571,7 @@ class Fe55(Tester):
             fm = numpy.array(self.mean_fwhm).mean()
             sm = numpy.array(self.mean_sigma).mean()
             s = "Mean FWHM for all channels: %5.2f (sigma = %.2f um)" % (fm, sm)
-            azcam.log(s)
+            senschar.log(s)
 
         if not self.grade_sensor:
             self.grade = "UNDEFINED"
@@ -577,7 +583,7 @@ class Fe55(Tester):
                     self.grade = "FAIL"
 
             s = "Grade = %s" % self.grade
-            azcam.log(s)
+            senschar.log(s)
 
         # read noise grade
         if self.readnoise_spec != -1:
@@ -635,7 +641,7 @@ class Fe55(Tester):
         }
 
         # write output files
-        azcam.utils.curdir(startingfolder)
+        senschar.util.curdir(startingfolder)
         self.write_datafile()
         if self.create_reports:
             self.report()
@@ -733,9 +739,9 @@ class Fe55(Tester):
 
         # plot raw events
         if "events" in self.make_plots:
-            fig_events = azcam_console.plot.plt.figure()
+            fig_events = senschar_console.plot.plt.figure()
             fignum = fig_events.number
-            azcam_console.plot.move_window(fignum)
+            senschar_console.plot.move_window(fignum)
             fig_events.suptitle(r"$\rm{X-Ray\ Events}$", fontsize=large_font)
             fig_events.tight_layout()
             fig_events.subplots_adjust(
@@ -751,13 +757,13 @@ class Fe55(Tester):
             plotnum = 1
             for _ in range(nrows):
                 for _ in range(ncols):
-                    azcam_console.plot.plt.subplot(nrows, ncols, plotnum)
+                    senschar_console.plot.plt.subplot(nrows, ncols, plotnum)
                     if self.num_chans == 1:
                         s1 = ""
                     else:
                         s1 = "Chan " + str(chan + 1)
-                    azcam_console.plot.plt.title(s1, fontsize=medium_font)
-                    ax = azcam_console.plot.plt.gca()
+                    senschar_console.plot.plt.title(s1, fontsize=medium_font)
+                    ax = senschar_console.plot.plt.gca()
 
                     median = numpy.median(self.imbufs[chan])
                     if median < 0:
@@ -768,7 +774,7 @@ class Fe55(Tester):
                         m2 = int(median * 5.0)
 
                     if 1:
-                        azcam_console.plot.plt.imshow(
+                        senschar_console.plot.plt.imshow(
                             self.imbufs[chan],
                             cmap="gray",
                             interpolation="none",
@@ -777,15 +783,15 @@ class Fe55(Tester):
                         )
                         nc = len(self.imbufs[chan][0])
                         nr = len(self.imbufs[chan])
-                        azcam_console.plot.plt.xlim(1, nc)
-                        azcam_console.plot.plt.ylim(1, nr)
-                        _, labels = azcam_console.plot.plt.xticks()
-                        azcam_console.plot.plt.setp(labels, rotation=45)
+                        senschar_console.plot.plt.xlim(1, nc)
+                        senschar_console.plot.plt.ylim(1, nr)
+                        _, labels = senschar_console.plot.plt.xticks()
+                        senschar_console.plot.plt.setp(labels, rotation=45)
 
                     if 1:
                         # mark valid events on events plot
-                        azcam_console.plot.plt.autoscale(False)
-                        azcam_console.plot.plt.scatter(
+                        senschar_console.plot.plt.autoscale(False)
+                        senschar_console.plot.plt.scatter(
                             self.xevents[chan],
                             self.yevents[chan],
                             s=10,
@@ -800,19 +806,19 @@ class Fe55(Tester):
                         ax.xaxis.set_ticks([])
                         ax.yaxis.set_ticks([])
 
-                    azcam_console.plot.update()
+                    senschar_console.plot.update()
 
                     chan += 1
                     plotnum += 1
 
             self.plot_files["events"] = "events.png"
             self.plot_titles["events"] = "X-Ray Events"
-            azcam_console.plot.save_figure(fignum, f"{self.plot_files['events']}")
+            senschar_console.plot.save_figure(fignum, f"{self.plot_files['events']}")
 
         if "histogram" in self.make_plots:
-            fig_hist = azcam_console.plot.plt.figure()
+            fig_hist = senschar_console.plot.plt.figure()
             fignum = fig_hist.number
-            azcam_console.plot.move_window(fignum)
+            senschar_console.plot.move_window(fignum)
             fig_hist.suptitle(r"$\rm{X-Ray\ Histograms}$", fontsize=large_font)
             fig_hist.subplots_adjust(
                 left=0.125,
@@ -827,14 +833,14 @@ class Fe55(Tester):
             plotnum = 1
             for _ in range(nrows):
                 for _ in range(ncols):
-                    azcam_console.plot.plt.subplot(nrows, ncols, plotnum)
+                    senschar_console.plot.plt.subplot(nrows, ncols, plotnum)
                     if self.num_chans == 1:
                         s1 = ""
                     else:
                         s1 = "Chan " + str(chan)
-                    azcam_console.plot.plt.title(s1, fontsize=medium_font)
-                    ax = azcam_console.plot.plt.gca()
-                    azcam_console.plot.plt.plot(
+                    senschar_console.plot.plt.title(s1, fontsize=medium_font)
+                    ax = senschar_console.plot.plt.gca()
+                    senschar_console.plot.plt.plot(
                         self.hist_x[chan], self.hist_y[chan], "b-"
                     )
                     ax.set_yscale("linear")
@@ -845,14 +851,14 @@ class Fe55(Tester):
                         ax.set_xlabel("Value")
                         ax.set_ylabel("Num. Events")
                     ax.grid(True)
-                    _, labels = azcam_console.plot.plt.xticks()
-                    azcam_console.plot.plt.setp(labels, rotation=45)
+                    _, labels = senschar_console.plot.plt.xticks()
+                    senschar_console.plot.plt.setp(labels, rotation=45)
 
-                    # azcam_console.plot.plt.xlim(zmedian/2.,zmedian*2.)
-                    # azcam_console.plot.plt.xlim(self.z[chan].min()-100, self.z[chan].max() + 200)
+                    # senschar_console.plot.plt.xlim(zmedian/2.,zmedian*2.)
+                    # senschar_console.plot.plt.xlim(self.z[chan].min()-100, self.z[chan].max() + 200)
 
                     hist_max = self.xray_lines["K-alpha"] / self.system_gain[chan]
-                    azcam_console.plot.plt.axvline(
+                    senschar_console.plot.plt.axvline(
                         x=hist_max, linewidth=1, color="k", linestyle="--"
                     )
 
@@ -861,16 +867,18 @@ class Fe55(Tester):
 
             self.plot_files["histogram"] = "histogram.png"
             self.plot_titles["histogram"] = "Histograms"
-            azcam_console.plot.save_figure(fignum, "%s" % self.plot_files["histogram"])
+            senschar_console.plot.save_figure(
+                fignum, "%s" % self.plot_files["histogram"]
+            )
 
         if "cte" in self.make_plots:
             last_col = len(self.imbufs[0][0])
             last_row = len(self.imbufs[0])
 
             # HCTE
-            fig_cte = azcam_console.plot.plt.figure()
+            fig_cte = senschar_console.plot.plt.figure()
             fignum = fig_cte.number
-            azcam_console.plot.move_window(fignum)
+            senschar_console.plot.move_window(fignum)
             fig_cte.suptitle(r"$\rm{HCTE}$", fontsize=large_font)
             fig_cte.subplots_adjust(
                 left=pleft,
@@ -886,29 +894,29 @@ class Fe55(Tester):
             plotnum = 1
             for _ in range(nrows):
                 for _ in range(ncols):
-                    azcam_console.plot.plt.subplot(nrows, ncols, plotnum)
+                    senschar_console.plot.plt.subplot(nrows, ncols, plotnum)
                     if self.num_chans == 1:
                         s1 = ""
                     else:
                         s1 = "Chan " + str(chan + 1)
-                    azcam_console.plot.plt.title(s1, fontsize=medium_font)
-                    ax = azcam_console.plot.plt.gca()
+                    senschar_console.plot.plt.title(s1, fontsize=medium_font)
+                    ax = senschar_console.plot.plt.gca()
 
-                    azcam_console.plot.plt.title("Chan %d" % chan)
+                    senschar_console.plot.plt.title("Chan %d" % chan)
 
-                    azcam_console.plot.plt.plot(
+                    senschar_console.plot.plt.plot(
                         self.event_data[chan][1], self.z[chan], "ro", markersize=2
                     )
-                    azcam_console.plot.plt.plot(
+                    senschar_console.plot.plt.plot(
                         list(range(1, last_col + 1)), self.fit_yhcte[chan], "b-"
                     )
-                    azcam_console.plot.plt.ylim(
+                    senschar_console.plot.plt.ylim(
                         self.z[chan].min() - 100, self.z[chan].max() + 200
                     )
-                    azcam_console.plot.plt.xlim(1, last_col)
+                    senschar_console.plot.plt.xlim(1, last_col)
 
                     s = "%0.6f" % (self.hcte[chan])
-                    azcam_console.plot.plt.annotate(
+                    senschar_console.plot.plt.annotate(
                         s,
                         xy=(0.15, 0.85),
                         xycoords="axes fraction",
@@ -917,21 +925,21 @@ class Fe55(Tester):
 
                     # ax.xaxis.set_ticks([])
                     # ax.yaxis.set_ticks([])
-                    _, labels = azcam_console.plot.plt.xticks()
-                    azcam_console.plot.plt.setp(labels, rotation=45)
+                    _, labels = senschar_console.plot.plt.xticks()
+                    senschar_console.plot.plt.setp(labels, rotation=45)
 
-                    azcam_console.plot.update()
+                    senschar_console.plot.update()
                     chan += 1
                     plotnum += 1
 
             self.plot_files["hcte"] = "hcte.png"
             self.plot_titles["hcte"] = "HCTE"
-            azcam_console.plot.save_figure(fignum, "%s" % self.plot_files["hcte"])
+            senschar_console.plot.save_figure(fignum, "%s" % self.plot_files["hcte"])
 
             # VCTE
-            fig_cte = azcam_console.plot.plt.figure()
+            fig_cte = senschar_console.plot.plt.figure()
             fignum = fig_cte.number
-            azcam_console.plot.move_window(fignum)
+            senschar_console.plot.move_window(fignum)
             fig_cte.suptitle(r"$\rm{VCTE}$", fontsize=large_font)
             fig_cte.subplots_adjust(
                 left=pleft,
@@ -946,29 +954,29 @@ class Fe55(Tester):
             plotnum = 1
             for _ in range(nrows):
                 for _ in range(ncols):
-                    azcam_console.plot.plt.subplot(nrows, ncols, plotnum)
+                    senschar_console.plot.plt.subplot(nrows, ncols, plotnum)
                     if self.num_chans == 1:
                         s1 = ""
                     else:
                         s1 = "Chan " + str(chan + 1)
-                    azcam_console.plot.plt.title(s1, fontsize=medium_font)
-                    ax = azcam_console.plot.plt.gca()
+                    senschar_console.plot.plt.title(s1, fontsize=medium_font)
+                    ax = senschar_console.plot.plt.gca()
 
-                    azcam_console.plot.plt.title("Chan %d" % chan)
+                    senschar_console.plot.plt.title("Chan %d" % chan)
 
-                    azcam_console.plot.plt.plot(
+                    senschar_console.plot.plt.plot(
                         self.event_data[chan][0], self.z[chan], "ro", markersize=2
                     )
-                    azcam_console.plot.plt.plot(
+                    senschar_console.plot.plt.plot(
                         list(range(1, last_row + 1)), self.fit_yvcte[chan], "b-"
                     )
-                    azcam_console.plot.plt.ylim(
+                    senschar_console.plot.plt.ylim(
                         self.z[chan].min() - 100, self.z[chan].max() + 200
                     )
-                    azcam_console.plot.plt.xlim(1, last_row)
+                    senschar_console.plot.plt.xlim(1, last_row)
 
                     s = "%0.6f" % (self.vcte[chan])
-                    azcam_console.plot.plt.annotate(
+                    senschar_console.plot.plt.annotate(
                         s,
                         xy=(0.15, 0.85),
                         xycoords="axes fraction",
@@ -977,18 +985,18 @@ class Fe55(Tester):
 
                     # ax.xaxis.set_ticks([])
                     # ax.yaxis.set_ticks([])
-                    _, labels = azcam_console.plot.plt.xticks()
-                    azcam_console.plot.plt.setp(labels, rotation=45)
+                    _, labels = senschar_console.plot.plt.xticks()
+                    senschar_console.plot.plt.setp(labels, rotation=45)
 
-                    azcam_console.plot.update()
+                    senschar_console.plot.update()
                     chan += 1
                     plotnum += 1
 
             self.plot_files["vcte"] = "vcte.png"
             self.plot_titles["vcte"] = "VCTE"
-            azcam_console.plot.save_figure(fignum, "%s" % self.plot_files["vcte"])
+            senschar_console.plot.save_figure(fignum, "%s" % self.plot_files["vcte"])
 
-        azcam_console.plot.plt.show()
+        senschar_console.plot.plt.show()
 
         return
 

@@ -1,5 +1,5 @@
 """
-azcam image I/O routines.
+senschar image I/O routines.
 """
 
 import os
@@ -12,7 +12,7 @@ from astropy.io import fits as pyfits
 
 class ImageIO(object):
     """
-    Methods for azcam image I/O.
+    Methods for senschar image I/O.
     """
 
     def __init__(self):
@@ -93,15 +93,15 @@ class ImageIO(object):
         except KeyError:
             self.title = ""
 
-        # check AzCam header
+        # check senschar header
         try:
-            azcam_head = hdr["AZCAM-HEAD"]
-            if azcam_head == "OK":
-                self.azcam_header = 1
+            senschar_head = hdr["senschar-HEAD"]
+            if senschar_head == "OK":
+                self.senschar_header = 1
             else:
-                self.azcam_header = 0
+                self.senschar_header = 0
         except KeyError:
-            self.azcam_header = 0
+            self.senschar_header = 0
 
         # set Array type - output data type
         self.array_type = self.data_types[self.bitpix2]
@@ -117,7 +117,7 @@ class ImageIO(object):
         self.focalplane.refpix1 = 0.0
         self.focalplane.refpix2 = 0.0
 
-        if self.azcam_header == 1:
+        if self.senschar_header == 1:
             # create empty arrays for focal plane values
             self.focalplane.amp_cfg = numpy.ndarray(shape=(cntExt), dtype="<u2")
             self.focalplane.det_number = numpy.ndarray(shape=(cntExt), dtype="<u2")
@@ -286,7 +286,7 @@ class ImageIO(object):
                 self.offsets[indx] = 0.0
                 self.scales[indx] = 1.0
 
-            if self.azcam_header == 1:
+            if self.senschar_header == 1:
                 for indx in range(1, NumExt + 1):
                     try:
                         self.focalplane.amp_cfg[indx - 1] = self.hdulist[indx].header[

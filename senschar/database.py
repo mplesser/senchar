@@ -1,21 +1,22 @@
 """
-Contains the main azcam database class.
+Contains the main senschar database class.
 """
 
 from typing import Any, Union, List, Dict
 
-import azcam
-from azcam.logger import AzCamLogger
-from azcam.parameters import Parameters
+import senschar
+from senschar.logger import Logger
+from senschar.parameters import Parameters
+from senschar.web.fastapi_server import WebServer
 
 
-class AzcamDatabase(object):
+class Database(object):
     """
-    The azcam database class.
+    The senschar database class.
     """
 
-    version: str = azcam.__version__
-    """current azcam version"""
+    version: str = senschar.__version__
+    """current senschar version"""
 
     wd: Union[str, None] = None
     """the current working directory"""
@@ -53,7 +54,7 @@ class AzcamDatabase(object):
     headerorder: list = []
     """header order in image header"""
 
-    logger: AzCamLogger = AzCamLogger()
+    logger: Logger = Logger()
     """logger object"""
 
     parameters: Parameters
@@ -201,3 +202,9 @@ class AzcamDatabase(object):
         setattr(self, name, value)
 
         return
+
+    parameters: Parameters
+    """parameters object"""
+
+    webserver: WebServer
+    """webserver object"""

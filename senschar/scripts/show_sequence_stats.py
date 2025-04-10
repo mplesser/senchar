@@ -6,10 +6,10 @@ import sys
 
 from matplotlib.ticker import MaxNLocator
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam_console.plot
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar_console.plot
 
 
 def show_sequence_stats(file_root="itl.", starting_sequence=1):
@@ -19,10 +19,10 @@ def show_sequence_stats(file_root="itl.", starting_sequence=1):
     """
 
     # inputs
-    file_root = azcam.db.parameters.get_local_par(
+    file_root = senschar.db.parameters.get_local_par(
         "show_sequence_stats", "file_root", "prompt", "Enter file root name", file_root
     )
-    starting_sequence = azcam.db.parameters.get_local_par(
+    starting_sequence = senschar.db.parameters.get_local_par(
         "show_sequence_stats",
         "starting_sequence",
         "prompt",
@@ -32,7 +32,7 @@ def show_sequence_stats(file_root="itl.", starting_sequence=1):
     starting_sequence = int(starting_sequence)
     SequenceNumber = starting_sequence
 
-    roi = azcam.db.tools["display"].get_rois(-1, "image")[0]  # use only first ROI
+    roi = senschar.db.tools["display"].get_rois(-1, "image")[0]  # use only first ROI
 
     means = []
     sigmas = []
@@ -43,18 +43,18 @@ def show_sequence_stats(file_root="itl.", starting_sequence=1):
         # img = file_root + "%.4u" % i
         img = f"{file_root}{i:d}"
         print(img)
-        img = azcam.utils.make_image_filename(img)
+        img = senschar.util.make_image_filename(img)
         print(img)
-        if not azcam.fits.file_exists(img):
+        if not senschar.fits.file_exists(img):
             break
-        stats = azcam.fits.stat(img, roi)
+        stats = senschar.fits.stat(img, roi)
         if len(stats[0]) == 0:
             break
 
         m = float(stats[0][0])
         sdev = float(stats[1][0])
         try:
-            temp = float(azcam.fits.get_keyword(img, "CAMTEMP"))
+            temp = float(senschar.fits.get_keyword(img, "CAMTEMP"))
         except KeyError:
             temp = -999.99
         means.append(m)
@@ -67,44 +67,44 @@ def show_sequence_stats(file_root="itl.", starting_sequence=1):
     if i == SequenceNumber:
         return "no files analyzed"
 
-    fig, ax = azcam_console.plot.plt.subplots(constrained_layout=True)
+    fig, ax = senschar_console.plot.plt.subplots(constrained_layout=True)
     fignum = fig.number
-    azcam_console.plot.move_window(fignum)
-    azcam_console.plot.plt.title("Mean")
-    azcam_console.plot.plt.xlabel("Image Number")
-    azcam_console.plot.plt.ylabel("Mean [DN]")
+    senschar_console.plot.move_window(fignum)
+    senschar_console.plot.plt.title("Mean")
+    senschar_console.plot.plt.xlabel("Image Number")
+    senschar_console.plot.plt.ylabel("Mean [DN]")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.grid(1)
-    azcam_console.plot.plt.plot(image_numbers, means)
-    azcam_console.plot.save_figure(fignum, "means.png")
+    senschar_console.plot.plt.plot(image_numbers, means)
+    senschar_console.plot.save_figure(fignum, "means.png")
 
-    fig, ax = azcam_console.plot.plt.subplots(constrained_layout=True)
+    fig, ax = senschar_console.plot.plt.subplots(constrained_layout=True)
     fignum = fig.number
-    azcam_console.plot.move_window(fignum)
-    azcam_console.plot.plt.title("Standard Deviation")
-    azcam_console.plot.plt.xlabel("Image Number")
-    azcam_console.plot.plt.ylabel("Sigma [DN]")
+    senschar_console.plot.move_window(fignum)
+    senschar_console.plot.plt.title("Standard Deviation")
+    senschar_console.plot.plt.xlabel("Image Number")
+    senschar_console.plot.plt.ylabel("Sigma [DN]")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.grid(1)
-    azcam_console.plot.plt.plot(image_numbers, sigmas)
-    azcam_console.plot.save_figure(fignum, "sigmas.png")
+    senschar_console.plot.plt.plot(image_numbers, sigmas)
+    senschar_console.plot.save_figure(fignum, "sigmas.png")
 
     # make differences
     means_delta = []
     for j in range(0, len(means) - 1):
         means_delta.append(means[j + 1] - means[j])
-    fig, ax = azcam_console.plot.plt.subplots(constrained_layout=True)
+    fig, ax = senschar_console.plot.plt.subplots(constrained_layout=True)
     fignum = fig.number
-    azcam_console.plot.move_window(fignum)
-    azcam_console.plot.plt.title("Mean Differences")
-    azcam_console.plot.plt.xlabel("Image Number")
-    azcam_console.plot.plt.ylabel("Mean [DN]")
+    senschar_console.plot.move_window(fignum)
+    senschar_console.plot.plt.title("Mean Differences")
+    senschar_console.plot.plt.xlabel("Image Number")
+    senschar_console.plot.plt.ylabel("Mean [DN]")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.grid(1)
-    azcam_console.plot.plt.plot(image_numbers[:-1], means_delta, "bs")
-    azcam_console.plot.save_figure(fignum, "differences.png")
+    senschar_console.plot.plt.plot(image_numbers[:-1], means_delta, "bs")
+    senschar_console.plot.save_figure(fignum, "differences.png")
 
-    azcam_console.plot.update()
+    senschar_console.plot.update()
     data = means, sigmas, means_delta
 
     return data

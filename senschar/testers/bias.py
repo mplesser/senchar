@@ -5,13 +5,13 @@ import time
 import numpy
 import matplotlib.patches as mpatches
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam.image
-import azcam_console.utils
-from azcam_console.plot import plt, save_figure
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar.image
+import senschar_console.utils
+from senschar_console.plot import plt, save_figure
+from senschar_console.testers.basetester import Tester
 
 
 class Bias(Tester):
@@ -53,7 +53,7 @@ class Bias(Tester):
         #: list of image data from all frames [N][y][x]
         self.datacube = numpy.array
 
-        #: list of azcam images
+        #: list of senschar images
         self.bias_images = []
 
         #: list of all bias filenames
@@ -86,41 +86,41 @@ class Bias(Tester):
         Acquire bias image sets for bias measurement.
         """
 
-        azcam.log("Acquiring bias sequence")
+        senschar.log("Acquiring bias sequence")
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
+        senschar.util.save_imagepars(impars)
 
         # create subfolder
-        currentfolder, subfolder = azcam_console.utils.make_file_folder("bias")
-        azcam.utils.curdir(subfolder)
-        azcam.db.parameters.set_par("imagefolder", subfolder)
-        azcam.db.parameters.set_par("imageroot", "bias.")
-        azcam.db.parameters.set_par("imageincludesequencenumber", 1)
-        azcam.db.parameters.set_par("imageautoname", 0)
-        azcam.db.parameters.set_par("imageautoincrementsequencenumber", 1)
-        azcam.db.parameters.set_par("imagetest", 0)
+        currentfolder, subfolder = senschar_console.utils.make_file_folder("bias")
+        senschar.util.curdir(subfolder)
+        senschar.db.parameters.set_par("imagefolder", subfolder)
+        senschar.db.parameters.set_par("imageroot", "bias.")
+        senschar.db.parameters.set_par("imageincludesequencenumber", 1)
+        senschar.db.parameters.set_par("imageautoname", 0)
+        senschar.db.parameters.set_par("imageautoincrementsequencenumber", 1)
+        senschar.db.parameters.set_par("imagetest", 0)
 
         # clear sensor
-        azcam.db.tools["exposure"].test(0)
+        senschar.db.tools["exposure"].test(0)
 
         # take bias images
-        azcam.db.parameters.set_par("imagetype", "zero")
+        senschar.db.parameters.set_par("imagetype", "zero")
         for i in range(self.number_images_acquire):
-            filename = os.path.basename(azcam.db.tools["exposure"].get_filename())
-            azcam.log(
+            filename = os.path.basename(senschar.db.tools["exposure"].get_filename())
+            senschar.log(
                 f"Taking bias image {i + 1}/{self.number_images_acquire}: {filename}"
             )
-            azcam.db.tools["exposure"].expose(0, "zero", "bias image")
+            senschar.db.tools["exposure"].expose(0, "zero", "bias image")
             if i < self.number_images_acquire - 1:
                 time.sleep(self.delay)
 
         # finish
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
 
-        azcam.log("Bias sequence finished")
+        senschar.log("Bias sequence finished")
 
         return
 
@@ -133,7 +133,7 @@ class Bias(Tester):
         is then overscan corrected.
         """
 
-        azcam.log("Analyzing bias sequence")
+        senschar.log("Analyzing bias sequence")
 
         rootname = "bias."
 
@@ -141,17 +141,17 @@ class Bias(Tester):
         self.superbias_filename = "superbias.fits"
         self.debiased_filename = "debiased.fits"
 
-        startingfolder = azcam.utils.curdir()
-        nextfile, starting_sequence = azcam_console.utils.find_file_in_sequence(
+        startingfolder = senschar.util.curdir()
+        nextfile, starting_sequence = senschar_console.utils.find_file_in_sequence(
             rootname
         )
         sequence_number = starting_sequence
 
         # ROI for stats
-        self.roi = azcam_console.utils.get_image_roi()
+        self.roi = senschar_console.utils.get_image_roi()
 
         # all images must have same image sections
-        numext, first_ext, last_ext = azcam.fits.get_extensions(nextfile)
+        numext, first_ext, last_ext = senschar.fits.get_extensions(nextfile)
         self._numchans = max(1, numext)
 
         # create list of all images
@@ -163,12 +163,12 @@ class Bias(Tester):
                 os.path.join(startingfolder, rootname + f"{sequence_number:04d}")
                 + ".fits"
             )
-            nextfile = azcam.utils.fix_path(nextfile)
+            nextfile = senschar.util.fix_path(nextfile)
 
         # make assembled images
         self.bias_images = []
         for frame in self.bias_filenames:
-            im = azcam.image.Image(frame)
+            im = senschar.image.Image(frame)
             im.assemble(1)  # assembled an trim overscan
             self.bias_images.append(im)
 
@@ -188,8 +188,8 @@ class Bias(Tester):
         self.median_noise = numpy.median(self.sdev_image)
 
         # make superbias
-        azcam.log(f"Creating superbias image: {self.superbias_filename}")
-        azcam.fits.combine(
+        senschar.log(f"Creating superbias image: {self.superbias_filename}")
+        senschar.fits.combine(
             self.bias_filenames,
             self.superbias_filename,
             "median",
@@ -198,12 +198,12 @@ class Bias(Tester):
         )
 
         # make debiased image (superbias with debias)
-        azcam.log(f"Creating debiased image: {self.debiased_filename}")
+        senschar.log(f"Creating debiased image: {self.debiased_filename}")
         if self.overscan_correct == 1:
             shutil.copy(self.superbias_filename, self.debiased_filename)
-            azcam.fits.colbias(self.debiased_filename, self.fit_order)
+            senschar.fits.colbias(self.debiased_filename, self.fit_order)
         else:
-            azcam.fits.arith(
+            senschar.fits.arith(
                 self.superbias_filename, "-", self.mean, self.debiased_filename
             )
 
@@ -227,7 +227,7 @@ class Bias(Tester):
         }
 
         # write output files
-        azcam.utils.curdir(startingfolder)
+        senschar.util.curdir(startingfolder)
         self.write_datafile()
         if self.create_reports:
             self.report()
@@ -244,7 +244,7 @@ class Bias(Tester):
         fig, ax = plt.subplots()
         fignum = fig.number
         plt.title("Bias Noise Histogram")
-        azcam_console.plot.move_window(fignum)
+        senschar_console.plot.move_window(fignum)
         ax = plt.gca()
         min1 = self.sdev_image.min()
         max1 = self.sdev_image.max()
@@ -280,7 +280,7 @@ class Bias(Tester):
         fig, ax = plt.subplots()
         fignum = fig.number
         plt.title("Cummulative Noise Histogram")
-        azcam_console.plot.move_window(fignum)
+        senschar_console.plot.move_window(fignum)
         ax = plt.gca()
         f1 = numpy.cumsum(counts) * step
         plt.plot(self.bins[:-1], f1)
@@ -310,7 +310,7 @@ class Bias(Tester):
         fig, ax = plt.subplots()
         fignum = fig.number
         plt.title("Bias Means Histogram")
-        azcam_console.plot.move_window(fignum)
+        senschar_console.plot.move_window(fignum)
         ax = plt.gca()
         min1 = self.mean_image.min()
         max1 = self.mean_image.max()
@@ -337,7 +337,7 @@ class Bias(Tester):
         fig, ax = plt.subplots()
         fignum = fig.number
         plt.title("Mean Image")
-        azcam_console.plot.move_window(fignum)
+        senschar_console.plot.move_window(fignum)
         im = plt.imshow(
             self.mean_image,
             cmap="gray",
@@ -353,7 +353,7 @@ class Bias(Tester):
         fig, ax = plt.subplots()
         fignum = fig.number
         plt.title("Median Image")
-        azcam_console.plot.move_window(fignum)
+        senschar_console.plot.move_window(fignum)
         im = plt.imshow(
             self.median_image,
             cmap="gray",
@@ -369,7 +369,7 @@ class Bias(Tester):
         fig, ax = plt.subplots()
         fignum = fig.number
         plt.title("Noise (sdev) Image")
-        azcam_console.plot.move_window(fignum)
+        senschar_console.plot.move_window(fignum)
         im = plt.imshow(
             self.sdev_image,
             cmap="gray",

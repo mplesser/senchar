@@ -3,17 +3,17 @@ import shutil
 
 import numpy
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam.image
-import azcam_console.plot
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar.image
+import senschar_console.plot
+from senschar_console.testers.basetester import Tester
 
 
 class Defects(Tester):
     """
-    Find and quantify image azcam.db.tools["defects"].
+    Find and quantify image senschar.db.tools["defects"].
     """
 
     def __init__(self):
@@ -72,10 +72,10 @@ class Defects(Tester):
         Report on defects from dark and superflat analysis.
         """
 
-        azcam.log("Analyzing total defects")
+        senschar.log("Analyzing total defects")
 
-        dark = azcam.db.tools["dark"]
-        superflat = azcam.db.tools["superflat"]
+        dark = senschar.db.tools["dark"]
+        superflat = senschar.db.tools["superflat"]
 
         # create defects mask if does not already exit
         if not self.mask_is_valid:
@@ -84,7 +84,7 @@ class Defects(Tester):
         self.total_rejected_pixels = (
             dark.bright_rejected_pixels + superflat.dark_rejected_pixels
         )
-        azcam.log(f"Total rejected pixels: {self.total_rejected_pixels}")
+        senschar.log(f"Total rejected pixels: {self.total_rejected_pixels}")
 
         if self.allowable_bad_pixels > 0:
             if self.total_rejected_pixels <= self.allowable_bad_pixels:
@@ -123,25 +123,25 @@ class Defects(Tester):
         Execute AFTER dark and bright defects are found.
         """
 
-        dark = azcam.db.tools["dark"]
-        superflat = azcam.db.tools["superflat"]
+        dark = senschar.db.tools["dark"]
+        superflat = senschar.db.tools["superflat"]
 
         # combine masks
         self.defects_mask = numpy.ma.logical_or(
             dark.masked_image.mask, superflat.masked_image.mask
         )
 
-        fig = azcam_console.plot.plt.figure()
+        fig = senschar_console.plot.plt.figure()
         fignum = fig.number
-        azcam_console.plot.move_window(fignum)
-        azcam_console.plot.plt.title("Pixel Rejection Mask")
-        implot = azcam_console.plot.plt.imshow(self.defects_mask.astype("uint8"))
+        senschar_console.plot.move_window(fignum)
+        senschar_console.plot.plt.title("Pixel Rejection Mask")
+        implot = senschar_console.plot.plt.imshow(self.defects_mask.astype("uint8"))
         implot.set_cmap("gray")
-        azcam_console.plot.plt.show()
-        azcam_console.plot.save_figure(fignum, "PixelRejectionMask")
+        senschar_console.plot.plt.show()
+        senschar_console.plot.save_figure(fignum, "PixelRejectionMask")
 
         # write mask as FITS
-        maskfile = azcam.image.Image(superflat.superflat_filename)
+        maskfile = senschar.image.Image(superflat.superflat_filename)
         maskfile.hdulist[0].header["OBJECT"] = "pixel mask"
         maskfile.assemble(1)  # for parameters
         maskfile.buffer = self.defects_mask
@@ -150,7 +150,7 @@ class Defects(Tester):
         maskfile.write_file(f"{self.defects_mask_filename}", 6)
 
         # write mask as FITS
-        # self.df = azcam.image.Image()
+        # self.df = senschar.image.Image()
         # # defectsmask.assemble(1)
         # defectsmask.buffer = numpy.ma.getmask(self.defects_mask).astype("uint8")
         # # defectsmask.buffer = self.defects_mask.astype("uint8")
@@ -209,8 +209,8 @@ class Defects(Tester):
             masked_image: input masked image
         """
 
-        dark = azcam.db.tools["dark"]
-        superflat = azcam.db.tools["superflat"]
+        dark = senschar.db.tools["dark"]
+        superflat = senschar.db.tools["superflat"]
 
         if dark.is_valid and superflat.is_valid:
             mask = numpy.ma.mask_or(
@@ -235,7 +235,7 @@ class Defects(Tester):
         if filename == "":
             filename = self.defects_mask_filename
 
-        defectsimage = azcam.image.Image(filename)
+        defectsimage = senschar.image.Image(filename)
         defectsimage.assemble(1)
         self.DefectsImage = defectsimage
 
@@ -290,14 +290,14 @@ class Defects(Tester):
         Plot the defective pixel mask.
         """
 
-        fig = azcam_console.plot.plt.figure()
+        fig = senschar_console.plot.plt.figure()
         fignum = fig.number
-        azcam_console.plot.move_window(fignum)
-        azcam_console.plot.plt.title("Pixel Rejection Mask")
-        implot = azcam_console.plot.plt.imshow(self.defects_mask.astype("uint8"))
+        senschar_console.plot.move_window(fignum)
+        senschar_console.plot.plt.title("Pixel Rejection Mask")
+        implot = senschar_console.plot.plt.imshow(self.defects_mask.astype("uint8"))
         implot.set_cmap("gray")
-        azcam_console.plot.plt.show()
-        azcam_console.plot.save_figure(fignum, "PixelRejectionMask")
+        senschar_console.plot.plt.show()
+        senschar_console.plot.save_figure(fignum, "PixelRejectionMask")
 
         return
 

@@ -1,11 +1,13 @@
 """
-Contains custom exceptions and warnings used throughout azcam.
+Contains custom exceptions and warnings used throughout senschar.
 """
 
-import azcam
+import senschar
 
 import warnings
+
 warnings.filterwarnings("ignore")
+
 
 def warning(message: str) -> None:
     """
@@ -16,32 +18,28 @@ def warning(message: str) -> None:
     # print(f"Warning: {message}")
 
     try:
-        azcam.logger.warning(message)
+        senschar.logger.warning(message)
     except Exception:
         print(f"Warning: {message}")
 
     return
 
 
-class AzcamError(Exception):
+class SenscharError(Exception):
     """
-    Base custom error class for azcam.
+    Base custom error class for azsenscharam.
     """
 
     def __init__(self, message: str, error_code: int = 0):
         """
-        Custom error exception for azcam.
+        Custom error exception for senschar.
 
-        Usage:  raise azcam.exceptions.AzcamError(message)
+        Usage:  raise senschar.exceptions.SenscharError(message)
 
         Args:
           message: string message to display when error is raised
           error_code: flag for code, from list below
           - 0 - no error
-          - 1 - controller reset error, check power and fibers
-          - 2 - could not open connection to server
-          - 3 - receive image data abort
-          - 4 - remote call not allowed
         """
 
         super().__init__(message)
@@ -53,7 +51,7 @@ class AzcamError(Exception):
             self.error_code = error_code
             # Original error was self.errors.message
 
-        if azcam.logger is not None:
-            azcam.logger.error(message)
+        if senschar.logger is not None:
+            senschar.logger.error(message)
         else:
-            print(f"AzcamError: {message}")
+            print(f"SenscharError: {message}")

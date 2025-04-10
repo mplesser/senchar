@@ -6,12 +6,12 @@ import shutil
 
 import numpy
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam.exceptions
-import azcam_console.plot
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar.exceptions
+import senschar_console.plot
+from senschar_console.testers.basetester import Tester
 
 
 class Ptc(Tester):
@@ -93,17 +93,19 @@ class Ptc(Tester):
         ExposureTimes is a list of exposure times for each pair.
         """
 
-        azcam.log("Acquiring PTC sequence")
+        senschar.log("Acquiring PTC sequence")
 
-        exposure, instrument = azcam_console.utils.get_tools(["exposure", "instrument"])
+        exposure, instrument = senschar_console.utils.get_tools(
+            ["exposure", "instrument"]
+        )
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
+        senschar.util.save_imagepars(impars)
 
         # create new subfolder
-        currentfolder, subfolder = azcam_console.utils.make_file_folder("ptc")
-        azcam.db.parameters.set_par("imagefolder", subfolder)
+        currentfolder, subfolder = senschar_console.utils.make_file_folder("ptc")
+        senschar.db.parameters.set_par("imagefolder", subfolder)
 
         # set wavelength
         if self.wavelength > 0:
@@ -111,52 +113,54 @@ class Ptc(Tester):
             wave1 = instrument.get_wavelength()
             wave1 = int(wave1)
             if wave1 != wave:
-                azcam.log(f"Setting wavelength to {wave} nm")
+                senschar.log(f"Setting wavelength to {wave} nm")
                 instrument.set_wavelength(wave)
                 wave1 = instrument.get_wavelength()
                 wave1 = int(wave1)
-            azcam.log(f"Current wavelength is {wave1} nm")
+            senschar.log(f"Current wavelength is {wave1} nm")
 
         # clear device
-        azcam.db.tools["exposure"].test(0)
+        senschar.db.tools["exposure"].test(0)
         imname = "test.fits"
-        bin1 = int(azcam.fits.get_keyword(imname, "CCDBIN1"))
-        bin2 = int(azcam.fits.get_keyword(imname, "CCDBIN2"))
+        bin1 = int(senschar.fits.get_keyword(imname, "CCDBIN1"))
+        bin2 = int(senschar.fits.get_keyword(imname, "CCDBIN2"))
         binning = bin1 * bin2
 
-        azcam.db.parameters.set_par("imageroot", "ptc.")  # for automatic data analysis
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par(
+            "imageroot", "ptc."
+        )  # for automatic data analysis
+        senschar.db.parameters.set_par(
             "imageincludesequencenumber", 1
         )  # use sequence numbers
-        azcam.db.parameters.set_par("imageautoname", 0)  # manually set name
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par("imageautoname", 0)  # manually set name
+        senschar.db.parameters.set_par(
             "imageautoincrementsequencenumber", 1
         )  # inc sequence numbers
-        azcam.db.parameters.set_par("imagetest", 0)  # turn off TestImage
+        senschar.db.parameters.set_par("imagetest", 0)  # turn off TestImage
 
         # bias image
-        azcam.db.parameters.set_par("imagetype", "zero")
+        senschar.db.parameters.set_par("imagetype", "zero")
         filename = os.path.basename(exposure.get_filename())
-        azcam.log("Taking PTC bias: %s" % filename)
+        senschar.log("Taking PTC bias: %s" % filename)
 
         exposure.expose(0, "zero", "PTC bias")
 
         # determine exposure times, scaling by gain difference if necessary
         if self.use_exposure_levels:
-            azcam.log("Using exposure_levels")
-            meancounts = azcam.db.tools["detcal"].mean_counts[self.wavelength]
+            senschar.log("Using exposure_levels")
+            meancounts = senschar.db.tools["detcal"].mean_counts[self.wavelength]
             self.exposure_times = (
                 numpy.array(self.exposure_levels) / meancounts / binning
             ) * (
-                azcam.db.tools["gain"].system_gain[0]
-                / azcam.db.tools["detcal"].system_gain[0]
+                senschar.db.tools["gain"].system_gain[0]
+                / senschar.db.tools["detcal"].system_gain[0]
             )
 
         elif len(self.exposure_times) > 0:
-            azcam.log("Using exposure_times")
+            senschar.log("Using exposure_times")
 
         elif self.number_images_acquire > 0:
-            azcam.log("Using number_images_acquire")
+            senschar.log("Using number_images_acquire")
             self.exposure_times = []
             min_exposure = float(self.max_exposure) / self.number_images_acquire
             exposure_inc = (self.max_exposure - min_exposure) / max(
@@ -167,15 +171,17 @@ class Ptc(Tester):
                 self.exposure_times.append(exptime)
                 exptime = exptime + exposure_inc
         else:
-            raise azcam.exceptions.AzcamError("could not determine exposure times")
+            raise senschar.exceptions.SenscharError(
+                "could not determine exposure times"
+            )
 
         # loop through pairs
-        azcam.db.parameters.set_par("imagetype", self.exposure_type)
+        senschar.db.parameters.set_par("imagetype", self.exposure_type)
         number_pairs = len(self.exposure_times)
 
         for pair, et in enumerate(self.exposure_times):
             filename = os.path.basename(exposure.get_filename())
-            azcam.log(
+            senschar.log(
                 f"Taking PTC pair {(pair + 1)} of {number_pairs} for {et:0.03f} secs"
             )
 
@@ -188,9 +194,9 @@ class Ptc(Tester):
             exposure.expose(et, self.exposure_type, "Frame2")
 
         # close
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
-        azcam.log("PTC sequence finished")
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
+        senschar.log("PTC sequence finished")
 
         return
 
@@ -199,43 +205,45 @@ class Ptc(Tester):
         Analyze an exisiting series of flats and create a Photon Transfer Curve (PTC) table.
         """
 
-        azcam.log("Analyzing PTC sequence")
+        senschar.log("Analyzing PTC sequence")
 
         rootname = "ptc."
         self.analysis_folder = ""
 
         subfolder = "analysis"
-        startingfolder = azcam.utils.curdir()
+        startingfolder = senschar.util.curdir()
 
         self.minfits = []
         self.maxfits = []
 
         if self.overscan_correct or self.resample > 1:
             # create analysis subfolder
-            startingfolder, subfolder = azcam_console.utils.make_file_folder(subfolder)
+            startingfolder, subfolder = senschar_console.utils.make_file_folder(
+                subfolder
+            )
 
             # copy all image files to analysis folder
-            azcam.log("Making copy of image files for analysis")
+            senschar.log("Making copy of image files for analysis")
             for filename in glob.glob(os.path.join(startingfolder, "ptc*.fits")):
                 shutil.copy(filename, subfolder)
 
-            azcam.utils.curdir(
+            senschar.util.curdir(
                 subfolder
             )  # move for analysis folder - assume it already exists
-        currentfolder = azcam.utils.curdir()
+        currentfolder = senschar.util.curdir()
         self.analysis_folder = currentfolder  # save for other tasks
 
-        firstfile, starting_seq_num = azcam_console.utils.find_file_in_sequence(
+        firstfile, starting_seq_num = senschar_console.utils.find_file_in_sequence(
             rootname
         )
         seq_num = starting_seq_num
 
-        self.NumExt, self.first_ext, self.last_ext = azcam.fits.get_extensions(
+        self.NumExt, self.first_ext, self.last_ext = senschar.fits.get_extensions(
             firstfile
         )
 
         # get ROI
-        self.roi = azcam_console.utils.get_image_roi()
+        self.roi = senschar_console.utils.get_image_roi()
 
         # Overscan correct all images
         if self.overscan_correct:
@@ -243,11 +251,13 @@ class Ptc(Tester):
                 os.path.join(currentfolder, rootname + "%04d" % seq_num) + ".fits"
             )
             loop = 0
-            azcam.log("Overscan correcting images")
+            senschar.log("Overscan correcting images")
             if 0:
                 while os.path.exists(nextfile):
-                    azcam.log("Overscan correct image: %s" % os.path.basename(nextfile))
-                    azcam.fits.colbias(nextfile, fit_order=self.fit_order)
+                    senschar.log(
+                        "Overscan correct image: %s" % os.path.basename(nextfile)
+                    )
+                    senschar.fits.colbias(nextfile, fit_order=self.fit_order)
                     seq_num = seq_num + 1
                     nextfile = (
                         os.path.join(currentfolder, rootname + "%04d" % seq_num)
@@ -257,9 +267,11 @@ class Ptc(Tester):
             else:
                 arguments = []
                 while os.path.exists(nextfile):
-                    azcam.log("Overscan correct image: %s" % os.path.basename(nextfile))
+                    senschar.log(
+                        "Overscan correct image: %s" % os.path.basename(nextfile)
+                    )
                     # arguments.append([nextfile, self.fit_order])
-                    azcam.fits.colbias(nextfile, fit_order=self.fit_order)
+                    senschar.fits.colbias(nextfile, fit_order=self.fit_order)
                     seq_num = seq_num + 1
                     nextfile = (
                         os.path.join(currentfolder, rootname + "%04d" % seq_num)
@@ -267,7 +279,7 @@ class Ptc(Tester):
                     )
                     loop += 1
                 # with concurrent.futures.ProcessPoolExecutor(self.number_workers) as executor:
-                #     futures_array = [executor.submit(azcam.fits.colbias, *arg) for arg in arguments]
+                #     futures_array = [executor.submit(senschar.fits.colbias, *arg) for arg in arguments]
                 #     for future in concurrent.futures.as_completed(futures_array):
                 #         data = future.result()
                 #         print("result", future, data)
@@ -278,10 +290,10 @@ class Ptc(Tester):
                 os.path.join(currentfolder, rootname + "%04d" % seq_num) + ".fits"
             )
             loop = 0
-            azcam.log(f"Resampling images: {self.resample}x{self.resample} pixels")
+            senschar.log(f"Resampling images: {self.resample}x{self.resample} pixels")
             while os.path.exists(nextfile):
-                azcam.log("Resampling image: %s" % os.path.basename(nextfile))
-                azcam.fits.resample(nextfile, 2)
+                senschar.log("Resampling image: %s" % os.path.basename(nextfile))
+                senschar.fits.resample(nextfile, 2)
                 seq_num = seq_num + 1
                 nextfile = (
                     os.path.join(currentfolder, rootname + "%04d" % seq_num) + ".fits"
@@ -291,14 +303,14 @@ class Ptc(Tester):
         # bias image used for gain calc
         zerofilename = rootname + "%04d" % starting_seq_num
         zerofilename = os.path.join(currentfolder, zerofilename) + ".fits"
-        zerofilename = azcam.utils.make_image_filename(zerofilename)
+        zerofilename = senschar.util.make_image_filename(zerofilename)
 
         # start with overscan corrected pair
         seq_num = starting_seq_num
         nextfile = os.path.join(currentfolder, rootname + "%04d" % seq_num) + ".fits"
         self.exposure_times = []
         while os.path.exists(nextfile):
-            if azcam.utils.check_keyboard(0) == "q":
+            if senschar.util.check_keyboard(0) == "q":
                 break
             seq_num = seq_num + 1
             flat1filename = rootname + "%04d" % seq_num
@@ -306,10 +318,10 @@ class Ptc(Tester):
             seq_num = seq_num + 1
             flat2filename = rootname + "%04d" % seq_num
             flat2filename = os.path.join(currentfolder, flat2filename) + ".fits"
-            ExposureTime = float(azcam.fits.get_keyword(flat1filename, "EXPTIME"))
+            ExposureTime = float(senschar.fits.get_keyword(flat1filename, "EXPTIME"))
             self.exposure_times.append(ExposureTime)
 
-            gain, noise, mean, sdev = azcam.db.tools["gain"].measure_gain(
+            gain, noise, mean, sdev = senschar.db.tools["gain"].measure_gain(
                 zerofilename, flat1filename, flat2filename
             )
             s = "Exposure Time: %-8.3f Mean: %.0f  File: %s" % (
@@ -317,7 +329,7 @@ class Ptc(Tester):
                 mean[0],
                 os.path.basename(flat1filename),
             )
-            azcam.log(s)
+            senschar.log(s)
 
             for chan in range(self.first_ext, self.last_ext):
                 s = "Chan: %2d Mean: %-8.0f Gain: %-5.2f Noise: %-5.1f" % (
@@ -326,7 +338,7 @@ class Ptc(Tester):
                     gain[chan - 1],
                     noise[chan - 1],
                 )
-                azcam.log(s)
+                senschar.log(s)
             self.means.append([float(x) for x in mean])
             self.gains.append([float(x) for x in gain])
             self.sdevs.append([float(x) for x in sdev])
@@ -370,10 +382,10 @@ class Ptc(Tester):
                 self.maxfits.append(maxfit)
 
         if self.grade_sensor:
-            azcam.log(f"Grade = {self.grade}")
+            senschar.log(f"Grade = {self.grade}")
 
         # move to starting folder for data/reports
-        azcam.utils.curdir(startingfolder)
+        senschar.util.curdir(startingfolder)
 
         # now plot
         if self.create_plots and len(self.means) > 2:
@@ -460,12 +472,12 @@ class Ptc(Tester):
         large_font = 18
         MediumFont = 16
         small_font = 14
-        plotstyle = azcam_console.plot.style_dot
+        plotstyle = senschar_console.plot.style_dot
 
         # setup PTC plot
-        fig_ptc = azcam_console.plot.plt.figure()
+        fig_ptc = senschar_console.plot.plt.figure()
         fignum_ptc = fig_ptc.number
-        azcam_console.plot.move_window(fignum_ptc)
+        senschar_console.plot.move_window(fignum_ptc)
         fig_ptc.suptitle("Photon Transfer Curve", fontsize=large_font)
         fig_ptc.subplots_adjust(
             left=pleft,
@@ -475,17 +487,17 @@ class Ptc(Tester):
             wspace=wspace,
             hspace=hspace,
         )
-        fig_ptc = azcam_console.plot.plt.subplot(1, 1, 1)
+        fig_ptc = senschar_console.plot.plt.subplot(1, 1, 1)
         fig_ptc.grid(1)
 
-        azcam_console.plot.plt.xlabel("Mean Signal [DN]", fontsize=MediumFont)
+        senschar_console.plot.plt.xlabel("Mean Signal [DN]", fontsize=MediumFont)
         if logplot:
-            azcam_console.plot.plt.ylabel("Noise [DN]", fontsize=MediumFont)
+            senschar_console.plot.plt.ylabel("Noise [DN]", fontsize=MediumFont)
         else:
-            azcam_console.plot.plt.ylabel(
+            senschar_console.plot.plt.ylabel(
                 r"$\rm{Variance\ [DN^2]}$", fontsize=MediumFont
             )
-        ax = azcam_console.plot.plt.gca()
+        ax = senschar_console.plot.plt.gca()
         for label in ax.yaxis.get_ticklabels():
             label.set_fontsize(small_font)
         for label in ax.xaxis.get_ticklabels():
@@ -493,9 +505,9 @@ class Ptc(Tester):
             label.set_fontsize(small_font)
 
         # setup gain plot
-        fig_gain = azcam_console.plot.plt.figure()
+        fig_gain = senschar_console.plot.plt.figure()
         fignum_gain = fig_gain.number
-        azcam_console.plot.move_window(fignum_gain)
+        senschar_console.plot.move_window(fignum_gain)
         fig_gain.suptitle("System Gain", fontsize=large_font)
         fig_gain.subplots_adjust(
             left=pleft,
@@ -505,11 +517,13 @@ class Ptc(Tester):
             wspace=wspace,
             hspace=hspace,
         )
-        fig_gain = azcam_console.plot.plt.subplot(1, 1, 1)
+        fig_gain = senschar_console.plot.plt.subplot(1, 1, 1)
         fig_gain.grid(1)
-        azcam_console.plot.plt.ylabel(r"$\rm{Gain\ [e^{-}/DN]}$", fontsize=MediumFont)
-        azcam_console.plot.plt.xlabel("Mean Signal [DN]", fontsize=MediumFont)
-        ax = azcam_console.plot.plt.gca()
+        senschar_console.plot.plt.ylabel(
+            r"$\rm{Gain\ [e^{-}/DN]}$", fontsize=MediumFont
+        )
+        senschar_console.plot.plt.xlabel("Mean Signal [DN]", fontsize=MediumFont)
+        ax = senschar_console.plot.plt.gca()
         for label in ax.xaxis.get_ticklabels():
             label.set_rotation(45)
             label.set_fontsize(small_font)
@@ -536,46 +550,46 @@ class Ptc(Tester):
                 var.append(s[i] * s[i])
 
             # ptc plot
-            azcam_console.plot.plt.figure(fignum_ptc)
+            senschar_console.plot.plt.figure(fignum_ptc)
             if logplot:
                 if self.style1 == "":
-                    azcam_console.plot.plt.loglog(
+                    senschar_console.plot.plt.loglog(
                         m,
                         sdev,
                         plotstyle[chan % self.num_chans],
                         markersize=marksize,
                     )
                 else:
-                    azcam_console.plot.plt.loglog(
+                    senschar_console.plot.plt.loglog(
                         m,
                         sdev,
                         self.style1,
                         markersize=marksize,
                     )
-                azcam_console.plot.plt.ylim(1)
-                azcam_console.plot.plt.xlim(1)
+                senschar_console.plot.plt.ylim(1)
+                senschar_console.plot.plt.xlim(1)
             else:
                 if self.style1 == "":
-                    azcam_console.plot.plt.plot(
+                    senschar_console.plot.plt.plot(
                         m,
                         var,
                         plotstyle[chan % self.num_chans],
                         markersize=marksize,
                     )
                 else:
-                    azcam_console.plot.plt.plot(
+                    senschar_console.plot.plt.plot(
                         m,
                         var,
                         self.style1,
                         markersize=marksize,
                     )
-                azcam_console.plot.plt.ylim(0)
-                azcam_console.plot.plt.xlim(0, 65000)
+                senschar_console.plot.plt.ylim(0)
+                senschar_console.plot.plt.xlim(0, 65000)
 
             # plot full well line
             if self.min_fullwell != -1:
-                ax = azcam_console.plot.plt.gca()
-                azcam_console.plot.plt.plot(
+                ax = senschar_console.plot.plt.gca()
+                senschar_console.plot.plt.plot(
                     [self.min_fullwell, self.min_fullwell],
                     ax.get_ylim(),
                     "r--",
@@ -598,12 +612,12 @@ class Ptc(Tester):
                         polycoeffs = numpy.polyfit(xx, yy, fitorder)
                     yfit = numpy.polyval(polycoeffs, xx)
                     if self.log_plot:
-                        azcam_console.plot.plt.loglog(xx, yfit, "r--", linewidth=1)
+                        senschar_console.plot.plt.loglog(xx, yfit, "r--", linewidth=1)
                     else:
-                        azcam_console.plot.plt.plot(xx, yfit, "r--", linewidth=1)
+                        senschar_console.plot.plt.plot(xx, yfit, "r--", linewidth=1)
                     self.slope = 1.0 / polycoeffs[0]
                     s = f"Gain = {self.slope:0.2f} [e/DN]"
-                    azcam_console.plot.plt.annotate(
+                    senschar_console.plot.plt.annotate(
                         s,
                         xy=(0.04, 0.9 - 0.07 * chan),
                         xycoords="axes fraction",
@@ -615,7 +629,7 @@ class Ptc(Tester):
                     self.poly_coeffs = polycoeffs
 
                 except numpy.linalg.LinAlgError:
-                    azcam.log(
+                    senschar.log(
                         f"Could not fit line to channel {chan} PTC data within limits"
                     )
 
@@ -626,16 +640,16 @@ class Ptc(Tester):
                 self.ptc_residuals.append(r / self.means_bychan[0][i])
 
             # gain plot
-            azcam_console.plot.plt.figure(fignum_gain)
+            senschar_console.plot.plt.figure(fignum_gain)
             if self.style2 == "":
-                azcam_console.plot.plt.plot(
+                senschar_console.plot.plt.plot(
                     m,
                     g,
                     plotstyle[chan % self.num_chans],
                     markersize=marksize,
                 )
             else:
-                azcam_console.plot.plt.plot(
+                senschar_console.plot.plt.plot(
                     m,
                     g,
                     self.style2,
@@ -644,22 +658,22 @@ class Ptc(Tester):
 
             # set axes
             if self.gain_range != []:
-                azcam_console.plot.plt.ylim(self.gain_range[0], self.gain_range[1])
+                senschar_console.plot.plt.ylim(self.gain_range[0], self.gain_range[1])
             else:
                 gmin = max(0, gmedian / 2.0)
                 gmax = gmedian * 2.0
-                azcam_console.plot.plt.ylim(gmin, gmax)
+                senschar_console.plot.plt.ylim(gmin, gmax)
 
-            azcam_console.plot.plt.xlim(0, 65000)
+            senschar_console.plot.plt.xlim(0, 65000)
 
             # one pass only for single channel mode
             if self.ext_analyze != -1:
                 break
 
         # save plots
-        azcam_console.plot.plt.show()
-        azcam_console.plot.save_figure(fignum_ptc, "ptc.png")
-        azcam_console.plot.save_figure(fignum_gain, "gain.png")
+        senschar_console.plot.plt.show()
+        senschar_console.plot.save_figure(fignum_ptc, "ptc.png")
+        senschar_console.plot.save_figure(fignum_gain, "gain.png")
 
         return
 

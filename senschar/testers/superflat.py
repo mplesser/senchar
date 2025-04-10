@@ -4,13 +4,13 @@ import shutil
 
 import numpy
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam.image
-import azcam_console.plot
-import azcam.exceptions
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar.image
+import senschar_console.plot
+import senschar.exceptions
+from senschar_console.testers.basetester import Tester
 
 
 class Superflat(Tester):
@@ -60,67 +60,69 @@ class Superflat(Tester):
         Acquire a set of flat field images.
         """
 
-        azcam.log("Acquiring Superflat sequence")
+        senschar.log("Acquiring Superflat sequence")
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
-        currentfolder, subfolder = azcam_console.utils.make_file_folder("superflat")
-        azcam.db.parameters.set_par("imageroot", "superflat.")
-        azcam.db.parameters.set_par("imageincludesequencenumber", 1)
-        azcam.db.parameters.set_par("imageautoname", 0)
-        azcam.db.parameters.set_par("imageautoincrementsequencenumber", 1)
-        azcam.db.parameters.set_par("imagetest", 0)
-        azcam.db.parameters.set_par("imagefolder", subfolder)
+        senschar.util.save_imagepars(impars)
+        currentfolder, subfolder = senschar_console.utils.make_file_folder("superflat")
+        senschar.db.parameters.set_par("imageroot", "superflat.")
+        senschar.db.parameters.set_par("imageincludesequencenumber", 1)
+        senschar.db.parameters.set_par("imageautoname", 0)
+        senschar.db.parameters.set_par("imageautoincrementsequencenumber", 1)
+        senschar.db.parameters.set_par("imagetest", 0)
+        senschar.db.parameters.set_par("imagefolder", subfolder)
 
         # set wavelength
         if self.wavelength > 0:
             wave = int(self.wavelength)
-            wave1 = int(azcam.db.tools["instrument"].get_wavelength())
+            wave1 = int(senschar.db.tools["instrument"].get_wavelength())
             if wave1 != wave:
-                azcam.log(f"Setting wavelength to {wave} nm")
-                azcam.db.tools["instrument"].set_wavelength(wave)
+                senschar.log(f"Setting wavelength to {wave} nm")
+                senschar.db.tools["instrument"].set_wavelength(wave)
 
         # clear device
-        azcam.db.tools["exposure"].test(0)
+        senschar.db.tools["exposure"].test(0)
         imname = "test.fits"
-        bin1 = int(azcam.fits.get_keyword(imname, "CCDBIN1"))
-        bin2 = int(azcam.fits.get_keyword(imname, "CCDBIN2"))
+        bin1 = int(senschar.fits.get_keyword(imname, "CCDBIN1"))
+        bin2 = int(senschar.fits.get_keyword(imname, "CCDBIN2"))
         binning = bin1 * bin2
 
         # Try exposure_level to get ExposureTime
         if self.use_exposure_levels:
-            azcam.log("Using exposure_level")
+            senschar.log("Using exposure_level")
 
-            meancounts = azcam.db.tools["detcal"].mean_counts[wave]
+            meancounts = senschar.db.tools["detcal"].mean_counts[wave]
             self.exposure_time = (
                 self.exposure_level
                 / meancounts
                 / binning
                 * (
-                    azcam.db.tools["gain"].system_gain[0]
-                    / azcam.db.tools["detcal"].system_gain[0]
+                    senschar.db.tools["gain"].system_gain[0]
+                    / senschar.db.tools["detcal"].system_gain[0]
                 )
             )
 
         elif self.exposure_time > 0:
-            azcam.log("Using exposure_time")
+            senschar.log("Using exposure_time")
         else:
-            raise azcam.exceptions.AzcamError("could not determine exposure times")
+            raise senschar.exceptions.SenscharError(
+                "could not determine exposure times"
+            )
 
         for loop in range(self.number_images_acquire):
-            azcam.log(
+            senschar.log(
                 f"Taking SuperFlat image {(loop + 1)} of {self.number_images_acquire} for {self.exposure_time:0.03f} seconds"
             )
-            azcam.db.tools["exposure"].expose(
+            senschar.db.tools["exposure"].expose(
                 self.exposure_time, self.exposure_type, "superflat flat"
             )
 
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
 
         # finish
-        azcam.log("Superflat sequence finished")
+        senschar.log("Superflat sequence finished")
 
         return
 
@@ -129,41 +131,41 @@ class Superflat(Tester):
         Analyze an existing SuperFlat image sequence for LSST.
         """
 
-        azcam.log("Analyzing superflat sequence")
+        senschar.log("Analyzing superflat sequence")
 
         rootname = "superflat."
         self.superflat_filename = "superflat.fits"  # filename of superflat image
         self.scaled_superflat_filename = "superflatscaled.fits"  # gain corrected image
 
         # create analysis subfolder
-        startingfolder, subfolder = azcam_console.utils.make_file_folder("analysis")
+        startingfolder, subfolder = senschar_console.utils.make_file_folder("analysis")
 
         # copy all image files to analysis folder
-        azcam.log("Making copy of image files for analysis")
+        senschar.log("Making copy of image files for analysis")
         for filename in glob.glob(os.path.join(startingfolder, "*.fits")):
             shutil.copy(filename, subfolder)
 
-        azcam.utils.curdir(subfolder)  # move to analysis folder
+        senschar.util.curdir(subfolder)  # move to analysis folder
 
-        _, StartingSequence = azcam_console.utils.find_file_in_sequence(rootname)
+        _, StartingSequence = senschar_console.utils.find_file_in_sequence(rootname)
         SequenceNumber = StartingSequence
 
         # start analyzing sequence
         nextfile = os.path.join(subfolder, rootname + "%04d" % SequenceNumber) + ".fits"
         filelist = []
         while os.path.exists(nextfile):
-            azcam.log(f"Processing {os.path.basename(nextfile)}")
+            senschar.log(f"Processing {os.path.basename(nextfile)}")
             filelist.append(nextfile)
 
             # colbias
             if self.overscan_correct:
-                azcam.fits.colbias(nextfile, fit_order=self.fit_order)
+                senschar.fits.colbias(nextfile, fit_order=self.fit_order)
 
             # "debias" correct with residuals after colbias
             if self.zero_correct:
-                debiased = azcam.db.tools["bias"].debiased_filename
+                debiased = senschar.db.tools["bias"].debiased_filename
                 biassub = "biassub.fits"
-                azcam.fits.sub(nextfile, debiased, biassub)
+                senschar.fits.sub(nextfile, debiased, biassub)
                 os.remove(nextfile)
                 os.rename(biassub, nextfile)
 
@@ -173,32 +175,32 @@ class Superflat(Tester):
             )
 
         # median combine all images
-        azcam.log(f"Combining superflat images ({self.combination_type})")
-        azcam.fits.combine(
+        senschar.log(f"Combining superflat images ({self.combination_type})")
+        senschar.fits.combine(
             filelist, self.superflat_filename, self.combination_type, overscan_correct=0
         )
 
         # make superflat image scaled by gain
-        if azcam.db.tools["gain"].is_valid:
-            self.system_gain = azcam.db.tools["gain"].system_gain
+        if senschar.db.tools["gain"].is_valid:
+            self.system_gain = senschar.db.tools["gain"].system_gain
         else:
-            azcam.log("WARNING: no gain values found for scaling")
-        self.superflat_image = azcam.image.Image(self.superflat_filename)
+            senschar.log("WARNING: no gain values found for scaling")
+        self.superflat_image = senschar.image.Image(self.superflat_filename)
         if self.overscan_correct:
             zmean = None
         else:
-            zmean = azcam.db.tools["gain"].zero_mean
+            zmean = senschar.db.tools["gain"].zero_mean
         self.superflat_image.set_scaling(self.system_gain, zmean)
         self.superflat_image.assemble(1)
 
         # plot superflat image
-        fig = azcam_console.plot.plt.figure()
+        fig = senschar_console.plot.plt.figure()
         fignum = fig.number
-        azcam_console.plot.move_window(fignum)
-        azcam_console.plot.plot_image(self.superflat_image)
-        azcam_console.plot.plt.title("Superflat Combined Image")
-        azcam_console.plot.plt.show()
-        azcam_console.plot.save_figure(fignum, self.superflat_image_plot)
+        senschar_console.plot.move_window(fignum)
+        senschar_console.plot.plot_image(self.superflat_image)
+        senschar_console.plot.plt.title("Superflat Combined Image")
+        senschar_console.plot.plt.show()
+        senschar_console.plot.save_figure(fignum, self.superflat_image_plot)
 
         # save scaled superflat image
         self.superflat_image.overwrite = 1
@@ -221,7 +223,7 @@ class Superflat(Tester):
         self.analyze_dark_defects(startingfolder)
 
         # finish
-        azcam.utils.curdir(startingfolder)
+        senschar.util.curdir(startingfolder)
         return
 
     def analyze_dark_defects(self, startingfolder):
@@ -229,14 +231,14 @@ class Superflat(Tester):
         Analyze dark defects in superflat image.
         """
 
-        azcam.log("Analyzing superflat image for dark defects")
+        senschar.log("Analyzing superflat image for dark defects")
 
         self.grade = "UNDEFINED"
         self.dark_rejected_pixels = 0
 
         # create masked array
         self.masked_image = numpy.ma.array(self.superflat_image.buffer, mask=False)
-        defects = azcam.db.tools["defects"]
+        defects = senschar.db.tools["defects"]
         defects.mask_edges(self.masked_image)
 
         # get total non-masked pixels (not including masked edges)
@@ -246,7 +248,7 @@ class Superflat(Tester):
         mean = numpy.ma.mean(self.masked_image)
         darklimit = mean * self.dark_pixel_reject
         s = f"Rejecting pixels below {darklimit:.0f} DN ({self.dark_pixel_reject:0.03f} of mean)"
-        azcam.log(s)
+        senschar.log(s)
 
         self.masked_image = numpy.ma.masked_where(
             self.masked_image < darklimit,
@@ -257,7 +259,7 @@ class Superflat(Tester):
             numpy.ma.count_masked(self.masked_image) - defects.number_edgemasked
         )
 
-        azcam.log(
+        senschar.log(
             f"Dark pixels rejected: {self.dark_rejected_pixels}/{self.totalpixels}: {((float(self.dark_rejected_pixels) / self.totalpixels) * 100.0):0.02f}%"
         )
 
@@ -268,22 +270,24 @@ class Superflat(Tester):
                 else:
                     self.grade = "PASS"
                 s = f"Grade = {self.grade}"
-                azcam.log(s)
+                senschar.log(s)
 
         # save dark mask
-        fig = azcam_console.plot.plt.figure()
+        fig = senschar_console.plot.plt.figure()
         fignum = fig.number
-        azcam_console.plot.move_window(fignum)
-        azcam_console.plot.plt.title("Dark Pixel Rejection Mask")
+        senschar_console.plot.move_window(fignum)
+        senschar_console.plot.plt.title("Dark Pixel Rejection Mask")
 
         self.dark_mask = numpy.ma.getmaskarray(self.masked_image).astype("uint8")
-        implot = azcam_console.plot.plt.imshow(self.dark_mask)
+        implot = senschar_console.plot.plt.imshow(self.dark_mask)
         implot.set_cmap("gray")
-        azcam_console.plot.plt.show()
-        azcam_console.plot.save_figure(fignum, self.darkpixel_rejectionmask)  # png file
+        senschar_console.plot.plt.show()
+        senschar_console.plot.save_figure(
+            fignum, self.darkpixel_rejectionmask
+        )  # png file
 
         # write mask as FITS
-        maskfile = azcam.image.Image(self.superflat_filename)
+        maskfile = senschar.image.Image(self.superflat_filename)
         maskfile.hdulist[0].header["OBJECT"] = "dark pixel mask"
         maskfile.assemble(1)  # for parameters
         maskfile.buffer = self.dark_mask
@@ -299,7 +303,7 @@ class Superflat(Tester):
             pass
 
         # write output files
-        azcam.utils.curdir(startingfolder)
+        senschar.util.curdir(startingfolder)
         if self.create_reports:
             self.make_dark_defects_report()
 

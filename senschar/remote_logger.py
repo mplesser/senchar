@@ -1,5 +1,5 @@
 """
-Example logging server which receives and prints azcam log records.
+Example logging server which receives and prints senschar log records.
 """
 
 import socketserver
@@ -27,7 +27,7 @@ class LoggingStreamHandler(socketserver.StreamRequestHandler):
             record = pickle.loads(chunk)
             lrec = logging.makeLogRecord(record)
             outstring = lrec.msg
-            # outstring = outstring.replace("| azcam.logger:log:68 - ", "")
+            # outstring = outstring.replace("| senschar.logger:log:68 - ", "")
             # outstring = outstring.replace(" | INFO   ", "")
             outstring = outstring[65:]
 
@@ -44,7 +44,7 @@ def start_and_serve_tcp(port: int = 2404):
 
     # optionally set window title
     try:
-        ctypes.windll.kernel32.SetConsoleTitleW("azcamlogger")
+        ctypes.windll.kernel32.SetConsoleTitleW("senscharlogger")
     except Exception:
         pass
     print(f"Logging server started on port {port}")

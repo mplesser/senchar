@@ -9,22 +9,22 @@ import numpy
 import scipy.ndimage
 import scipy.optimize
 
-import azcam
-import azcam.utils
-from azcam.image import Image
-import azcam_console.console
-import azcam_console.plot
+import senschar
+import senschar.utils
+from senschar.image import Image
+import senschar_console.console
+import senschar_console.plot
 
 
 def threshold_image(filename="test.fits"):
-    filename = azcam.db.parameters.get_local_par(
+    filename = senschar.db.parameters.get_local_par(
         "threshold_image", "filename", "prompt", "Enter image filename", filename
     )
     if filename == ".":
-        reply = azcam_console.utils.file_browser("", [("image files", ("*.fits"))])
+        reply = senschar_console.utils.file_browser("", [("image files", ("*.fits"))])
         filename = reply[0]
     if not os.path.isabs(filename):
-        filename = azcam.utils.make_image_filename(filename)
+        filename = senschar.util.make_image_filename(filename)
 
     # **************************************************************
     # Threshold data
@@ -47,16 +47,16 @@ def threshold_image(filename="test.fits"):
     y = numpy.array(centers)[:, 1]
 
     # r = numpy.sqrt((x-512)**2+(y-512)**2)
-    # azcam_console.plot.plt.hist(r, bins=50)
+    # senschar_console.plot.plt.hist(r, bins=50)
 
     xint = x.astype(int)
     yint = y.astype(int)
     values = data[xint, yint]
 
     bins = int(threshold * 1.2 - threshold * 0.95)
-    azcam_console.plot.plt.hist(values, bins=bins)
-    azcam_console.plot.plt.xlim(threshold * 0.95, threshold * 1.2)
-    azcam_console.plot.plt.show()
+    senschar_console.plot.plt.hist(values, bins=bins)
+    senschar_console.plot.plt.xlim(threshold * 0.95, threshold * 1.2)
+    senschar_console.plot.plt.show()
 
     """
     # pick good events on DS9 for PSF fitting
@@ -70,11 +70,11 @@ def threshold_image(filename="test.fits"):
     errfunc = lambda p, x, y: fitfunc(p,x)-y
     parameters,foo = scipy.optimize.leastsq(errfunc,(100,10,3),args=(x,y))
 
-    azcam_console.plot.plt.clf()
-    azcam_console.plot.plt.xlabel('X')
-    azcam_console.plot.plt.ylabel('Pixel value above background')
-    azcam_console.plot.plt.plot(x,fitfunc(parameters,x))
-    azcam_console.plot.plt.errorbar(x,y,yerr=numpy.sqrt(y),fmt='ro')
+    senschar_console.plot.plt.clf()
+    senschar_console.plot.plt.xlabel('X')
+    senschar_console.plot.plt.ylabel('Pixel value above background')
+    senschar_console.plot.plt.plot(x,fitfunc(parameters,x))
+    senschar_console.plot.plt.errorbar(x,y,yerr=numpy.sqrt(y),fmt='ro')
     """
 
     """
@@ -92,9 +92,9 @@ def threshold_image(filename="test.fits"):
 
     # write and display new image
     im.write_file("filtered.fits", 6)
-    azcam.db.tools["display"].display("filtered")
+    senschar.db.tools["display"].display("filtered")
 
-    azcam_console.plot.plt.show()
+    senschar_console.plot.plt.show()
 
     return
 

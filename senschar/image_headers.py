@@ -5,7 +5,7 @@ Contains code for calculating and writing image header information.
 import os
 import math
 
-import azcam
+import senschar
 
 
 class ImageHeaders(object):
@@ -65,8 +65,8 @@ class ImageHeaders(object):
 
         # keywords are written after exposure is completed
         curpos = len(hdu.header)
-        for headername in azcam.db.headerorder:
-            item_header = azcam.db.headers[headername]
+        for headername in senschar.db.headerorder:
+            item_header = senschar.db.headers[headername]
             cheader = item_header.get_header()  # list of kw, value, comment, type]
             if cheader == [] or cheader is None:
                 continue
@@ -1069,7 +1069,7 @@ class ImageHeaders(object):
             "==================================================================",
             after=curpos,
         )
-        hdu.header.add_comment("AzCam Focal plane", after=curpos + 1)
+        hdu.header.add_comment("senschar focal plane", after=curpos + 1)
         hdu.header.add_comment(
             "==================================================================",
             after=curpos + 2,

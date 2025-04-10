@@ -1,3 +1,3 @@
 """
-azcamserver scripts
+senscharserver scripts
 """

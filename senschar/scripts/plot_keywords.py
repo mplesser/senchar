@@ -1,9 +1,9 @@
 import datetime
 import sys
 
-import azcam
+import senschar
 from .show_sequence_keywords import show_sequence_keywords
-import azcam_console.plot
+import senschar_console.plot
 
 # val1=abs((val1-datetime.datetime(1970,1,1)).total_seconds())
 
@@ -26,7 +26,7 @@ def plot_keywords():
         last = val1
         data.append(val1)
 
-    azcam_console.plot.plt.plot(data)
+    senschar_console.plot.plt.plot(data)
 
     return
 

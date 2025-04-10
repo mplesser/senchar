@@ -2,9 +2,9 @@
 Contains the FocalPlane and WCS classes.
 """
 
-import azcam
+import senschar
 import numpy
-from azcam.header import Header, ObjectHeaderMethods
+from senschar.header import Header, ObjectHeaderMethods
 
 
 class FocalPlane(ObjectHeaderMethods):
@@ -190,7 +190,7 @@ class FocalPlane(ObjectHeaderMethods):
         Update focal plane keywords in header
         """
 
-        self.header.set_keyword("AZCAM-HEAD", "OK", "AzCam Header flag", "str")
+        self.header.set_keyword("senschar-HEAD", "OK", "senschar header flag", "str")
         self.header.set_keyword(
             "NUM-DETX", self.numdet_x, "Number of detectors in X", "int"
         )
@@ -845,13 +845,13 @@ class WCS(object):
             return
 
         try:
-            get_ra = azcam.db.tools[self.coord_object].header.get_keyword("RA")
+            get_ra = senschar.db.tools[self.coord_object].header.get_keyword("RA")
             self.ra_deg = self._ra_to_deg(get_ra[0])
         except Exception:
             self.ra_deg = self._ra_to_deg(self.def_ra)
 
         try:
-            get_dec = azcam.db.tools[self.coord_object].header.get_keyword("DEC")
+            get_dec = senschar.db.tools[self.coord_object].header.get_keyword("DEC")
             self.dec_deg = self._dec_to_deg(get_dec[0])
         except Exception:
             self.dec_deg = self._dec_to_deg(self.def_dec)

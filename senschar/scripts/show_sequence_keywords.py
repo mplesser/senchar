@@ -4,9 +4,9 @@ show keywords from a sequence of images.
 
 import sys
 
-import azcam
-import azcam.utils
-import azcam.fits
+import senschar
+import senschar.utils
+import senschar.fits
 
 
 def show_sequence_keywords(FileRoot="itl.", StartingSequence=1, keyword="OBJECT"):
@@ -18,17 +18,17 @@ def show_sequence_keywords(FileRoot="itl.", StartingSequence=1, keyword="OBJECT"
     data = []
 
     # inputs
-    FileRoot = azcam.db.parameters.get_local_par(
+    FileRoot = senschar.db.parameters.get_local_par(
         "show_sequence_keywords", "FileRoot", "prompt", "Enter file root name", FileRoot
     )
-    StartingSequence = azcam.db.parameters.get_local_par(
+    StartingSequence = senschar.db.parameters.get_local_par(
         "show_sequence_keywords",
         "StartingSequence",
         "prompt",
         "Enter starting sequence number",
         StartingSequence,
     )
-    keyword = azcam.db.parameters.get_local_par(
+    keyword = senschar.db.parameters.get_local_par(
         "show_sequence_keywords", "keyword", "prompt", "Enter keyword name", keyword
     )
     StartingSequence = int(StartingSequence)
@@ -37,10 +37,10 @@ def show_sequence_keywords(FileRoot="itl.", StartingSequence=1, keyword="OBJECT"
 
     while True:
         img = FileRoot + "%.4u" % i
-        img = azcam.utils.make_image_filename(img)
-        if not azcam.fits.file_exists(img):
+        img = senschar.util.make_image_filename(img)
+        if not senschar.fits.file_exists(img):
             break
-        reply = azcam.fits.get_keyword(img, keyword)
+        reply = senschar.fits.get_keyword(img, keyword)
         value = reply
 
         data.append(value)

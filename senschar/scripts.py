@@ -2,13 +2,13 @@ import importlib
 import importlib.util
 import os
 
-import azcam
-import azcam.exceptions
+import senschar
+import senschar.exceptions
 
 
 def loadscripts(packages: list) -> None:
     """
-    Load scripts into azcam.db.scripts.
+    Load scripts into senschar.db.scripts.
     """
 
     for package in packages:
@@ -31,10 +31,10 @@ def loadscripts(packages: list) -> None:
             try:
                 mod = importlib.import_module(f"{package}.{pfile}")
                 func = getattr(mod, pfile)
-                # azcam.db.scripts[pfile] = func
-                azcam.db.cli[pfile] = func
+                # senschar.db.scripts[pfile] = func
+                senschar.db.cli[pfile] = func
             except Exception as e:
-                azcam.log(e)
-                azcam.exceptions.warning(f"Could not import script {pfile}")
+                senschar.log(e)
+                senschar.exceptions.warning(f"Could not import script {pfile}")
 
     return

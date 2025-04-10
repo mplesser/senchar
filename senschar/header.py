@@ -5,15 +5,15 @@ Contains the Header and System classes.
 import os
 import typing
 
-import azcam
-import azcam.utils
-import azcam.exceptions
+import senschar
+import senschar.utils
+import senschar.exceptions
 
 
 class Header(object):
     """
     Defines the Header class which is used to create and manipulate headers contained
-    in many azcam tools.
+    in many senschar tools.
 
     Attributes:
         self.title (str): header title dictionary {index:title_line}
@@ -46,7 +46,6 @@ class Header(object):
             self.set_title(title)
 
         if template is not None:
-            azcam.db.tools["exposure"].imageheaderfile = template
             self.read_file(template)
 
     def set_header(self, object_name: str, order: int = -1):
@@ -60,14 +59,14 @@ class Header(object):
         """
 
         if object_name not in list(
-            azcam.db.headers.keys()
+            senschar.db.headers.keys()
         ):  # do not change order if already exists
             if order == -1:
-                azcam.db.headerorder.append(object_name)
+                senschar.db.headerorder.append(object_name)
             else:
-                azcam.db.headerorder.insert(order, object_name)
+                senschar.db.headerorder.insert(order, object_name)
 
-        azcam.db.headers[object_name] = self  # may replace an existing object
+        senschar.db.headers[object_name] = self  # may replace an existing object
 
         return
 
@@ -77,7 +76,7 @@ class Header(object):
         """
 
         # special case
-        title = "AzCam Focal plane" if title == "Focalplane" else title
+        title = "senschar focal plane" if title == "Focalplane" else title
         self.title[0] = (
             "=================================================================="
         )
@@ -179,7 +178,7 @@ class Header(object):
             return
 
         # allow for quotes
-        tokens = azcam.utils.parse(keystring)
+        tokens = senschar.util.parse(keystring)
 
         keyword = tokens[0]
 
@@ -324,7 +323,7 @@ class Header(object):
             return
 
         if not os.path.exists(filename):
-            azcam.exceptions.AzcamError(f"Header file not found: {filename}")
+            senschar.exceptions.SenscharError(f"Header file not found: {filename}")
 
         with open(filename, "r") as f1:
             for line in f1.readlines():
@@ -349,7 +348,7 @@ class Header(object):
                         comment = tokens[1][nslash + 1 :].strip()
                         value = tokens[1][:nslash].strip()
 
-                typ, val = azcam.utils.get_datatype(value)
+                typ, val = senschar.util.get_datatype(value)
                 self.set_keyword(keyword, val, comment, typ)
 
         self.filename = filename

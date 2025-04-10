@@ -1,20 +1,19 @@
 """
-*azcam_console.console* is imported to define console mode, create the azcamconsole parameters dictionary, and define a logger.
+*senschar_console.console* is imported to define console mode, create the senscharconsole parameters dictionary, and define a logger.
 """
 
-import azcam
-from azcam.logger import AzCamLogger
-from azcam_console.parameters_console import ParametersConsole
-from azcam_console.database_console import AzcamDatabaseConsole
+import senschar
+from senschar.logger import Logger
+from senschar.parameters import Parameters
+from senschar.database import Database
 
 
 def setup_console():
 
-    azcam.mode = "console"
-    azcam.db = AzcamDatabaseConsole()  # overwrite default db
-    azcam.db.parameters = ParametersConsole()
-    azcam.db.logger = AzCamLogger()
-    azcam.log = azcam.db.logger.log  # to allow azcam.log()
+    senschar.db = Database()
+    senschar.db.parameters = Parameters()
+    senschar.db.logger = Logger()
+    senschar.log = senschar.db.logger.log  # to allow senschar.log()
 
 
-setup_console()
+# setup_console()

@@ -4,28 +4,31 @@ Usage: Run scan_wavelengths
 
 import sys
 
-import azcam
+import senschar
 
 
 def scan_wavelengths():
 
     et = 15 * 60.0
 
-    azcam.db.parameters.set_par("imagetest", 0)
+    senschar.db.parameters.set_par("imagetest", 0)
 
     for wave in range(800, 1110, 10):
 
         print("")
         print("Moving to wavelength is %.0f" % float(wave))
-        azcam.db.tools["instrument"].set_wavelength(wave)
-        print("Current wavelength is %.0f" % azcam.db.tools["instrument"].get_wavelength())
+        senschar.db.tools["instrument"].set_wavelength(wave)
+        print(
+            "Current wavelength is %.0f"
+            % senschar.db.tools["instrument"].get_wavelength()
+        )
 
         print("Exposing...")
-        azcam.db.tools["exposure"].expose(et, "flat", "wavelength scan: %d" % wave)
+        senschar.db.tools["exposure"].expose(et, "flat", "wavelength scan: %d" % wave)
         print("Finished")
 
     # reset
-    azcam.db.parameters.set_par("imagetest", 1)
+    senschar.db.parameters.set_par("imagetest", 1)
 
     return
 

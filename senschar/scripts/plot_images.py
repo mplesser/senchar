@@ -5,10 +5,10 @@ Save a sequence of FITS images as png files.
 import os
 import sys
 
-import azcam
-import azcam.utils
-from azcam.image import Image
-import azcam_console.plot
+import senschar
+import senschar.utils
+from senschar.image import Image
+import senschar_console.plot
 
 
 def plot_images(folder="."):
@@ -20,8 +20,8 @@ def plot_images(folder="."):
     print("")
 
     # get gain for scaling - TODO: fix me
-    if not azcam.db.tools["gain"].is_valid:
-        azcam.db.tools["gain"].read_datafile("../gain/gain.txt")
+    if not senschar.db.tools["gain"].is_valid:
+        senschar.db.tools["gain"].read_datafile("../gain/gain.txt")
 
     # loop through files
     QUIT = 0
@@ -34,30 +34,30 @@ def plot_images(folder="."):
         for filename in filenames:
             if not filename.endswith(".fits"):
                 continue
-            azcam_console.utils.beep(FreqYES, DurYES)
+            senschar_console.utils.beep(FreqYES, DurYES)
             f = os.path.join(root, filename)
 
-            azcam.db.tools["display"].display(f)
-            azcam.db.tools["display"].zoom(0)
+            senschar.db.tools["display"].display(f)
+            senschar.db.tools["display"].zoom(0)
 
             print(f"Filename: {filename}")
-            key = azcam.utils.check_keyboard(0)
+            key = senschar.util.check_keyboard(0)
             if key.lower() == "q":
                 QUIT = 1
                 break
 
             images[filename] = Image(f)
             images[filename].set_scaling(
-                azcam.db.tools["gain"].system_gain,
-                azcam.db.tools["gain"].zero_mean,
+                senschar.db.tools["gain"].system_gain,
+                senschar.db.tools["gain"].zero_mean,
             )
             images[filename].assemble(1)
             # m = images[filename].buffer.mean()
-            implot = azcam_console.plot.plt.imshow(images[filename].buffer)
+            implot = senschar_console.plot.plt.imshow(images[filename].buffer)
             implot.set_cmap("gray")
-            azcam_console.plot.update()
+            senschar_console.plot.update()
             # newfilename = filename.replace(".fits", ".png")
-            # azcam_console.plot.save_figure(1, newfilename)
+            # senschar_console.plot.save_figure(1, newfilename)
             count += 1
 
             # debug

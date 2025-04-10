@@ -53,9 +53,7 @@ watch:
 
 nav:
   - Home: 'index.md'
-  - 'api.md'
   - 'commands.md'
   - 'classes.md'
-  - 'azcamserver.md'
   - 'autocode.md'
   - 'advanced.md'

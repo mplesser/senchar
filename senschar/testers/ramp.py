@@ -4,11 +4,11 @@ import os
 import numpy
 from astropy.io import fits as pyfits
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam_console.plot
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar_console.plot
+from senschar_console.testers.basetester import Tester
 
 
 class Ramp(Tester):
@@ -45,47 +45,49 @@ class Ramp(Tester):
         """
 
         # create new subfolder
-        currentfolder, newfolder = azcam_console.utils.make_file_folder("ramp")
-        azcam.db.parameters.set_par("imagefolder", newfolder)
+        currentfolder, newfolder = senschar_console.utils.make_file_folder("ramp")
+        senschar.db.parameters.set_par("imagefolder", newfolder)
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
+        senschar.util.save_imagepars(impars)
 
         # flush detector
-        azcam.db.tools["exposure"].test(0)
+        senschar.db.tools["exposure"].test(0)
 
-        azcam.db.parameters.set_par("imageroot", "ramp.")  # for automatic data analysis
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par(
+            "imageroot", "ramp."
+        )  # for automatic data analysis
+        senschar.db.parameters.set_par(
             "imageincludesequencenumber", 1
         )  # use sequence numbers
-        azcam.db.parameters.set_par("imageautoname", 0)  # manually set name
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par("imageautoname", 0)  # manually set name
+        senschar.db.parameters.set_par(
             "imageautoincrementsequencenumber", 1
         )  # inc sequence numbers
-        azcam.db.parameters.set_par("imagetest", 0)  # turn off TestImage
+        senschar.db.parameters.set_par("imagetest", 0)  # turn off TestImage
 
         # get bias image
-        azcam.db.parameters.set_par("imagetype", "zero")
-        zerofile = azcam.db.tools["exposure"].get_filename()
-        azcam.log("Taking bias image %s " % os.path.basename(zerofile))
-        azcam.db.tools["exposure"].expose(0, "zero", "ramp bias")
+        senschar.db.parameters.set_par("imagetype", "zero")
+        zerofile = senschar.db.tools["exposure"].get_filename()
+        senschar.log("Taking bias image %s " % os.path.basename(zerofile))
+        senschar.db.tools["exposure"].expose(0, "zero", "ramp bias")
 
         # take data images
-        base_et = azcam.db.tools["exposure"].get_exposuretime()
-        azcam.db.parameters.set_par("imagetype", "ramp")
-        file1 = azcam.db.tools["exposure"].get_filename()
-        azcam.log("Taking ramp image 1 %s" % os.path.basename(file1))
-        azcam.db.tools["exposure"].expose(base_et, "ramp", "ramp image 1")
+        base_et = senschar.db.tools["exposure"].get_exposuretime()
+        senschar.db.parameters.set_par("imagetype", "ramp")
+        file1 = senschar.db.tools["exposure"].get_filename()
+        senschar.log("Taking ramp image 1 %s" % os.path.basename(file1))
+        senschar.db.tools["exposure"].expose(base_et, "ramp", "ramp image 1")
 
-        file2 = azcam.db.tools["exposure"].get_filename()
-        azcam.log("Taking ramp image 2 %s" % os.path.basename(file2))
-        azcam.db.tools["exposure"].flush(2)
-        azcam.db.tools["exposure"].expose(base_et, "ramp", "ramp image 2")
+        file2 = senschar.db.tools["exposure"].get_filename()
+        senschar.log("Taking ramp image 2 %s" % os.path.basename(file2))
+        senschar.db.tools["exposure"].flush(2)
+        senschar.db.tools["exposure"].expose(base_et, "ramp", "ramp image 2")
 
         # finish
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
 
         return
 
@@ -97,18 +99,18 @@ class Ramp(Tester):
         rootname = "ramp."
         self.MaxRow = MaxRow
 
-        _, StartingSequence = azcam_console.utils.find_file_in_sequence(rootname)
+        _, StartingSequence = senschar_console.utils.find_file_in_sequence(rootname)
         SequenceNumber = StartingSequence
 
-        CurrentFolder = azcam.utils.curdir()
+        CurrentFolder = senschar.util.curdir()
 
         # get ROI
-        self.roi = azcam_console.utils.get_image_roi()
+        self.roi = senschar_console.utils.get_image_roi()
 
         # bias image
         zerofilename = rootname + "%04d" % StartingSequence
         zerofilename = os.path.join(CurrentFolder, zerofilename) + ".fits"
-        zerofilename = azcam.utils.make_image_filename(zerofilename)
+        zerofilename = senschar.util.make_image_filename(zerofilename)
 
         # create ramp.txt text file
         self.ramp_file = os.path.join(CurrentFolder, "ramp.txt")
@@ -141,11 +143,11 @@ class Ramp(Tester):
         Calculate ptc data from a bias and two ramp images.
         """
 
-        Ramp1 = azcam.utils.make_image_filename(Ramp1)
-        Ramp2 = azcam.utils.make_image_filename(Ramp2)
+        Ramp1 = senschar.util.make_image_filename(Ramp1)
+        Ramp2 = senschar.util.make_image_filename(Ramp2)
 
         # extentions are elements 1 -> NumExt
-        NumExt, first_ext, last_ext = azcam.fits.get_extensions(Zero)
+        NumExt, first_ext, last_ext = senschar.fits.get_extensions(Zero)
         if NumExt == 0:
             data_ffci = []
             data_mean = []
@@ -158,8 +160,8 @@ class Ramp(Tester):
             data_mean = [0]
 
         # get bias mean and sigma
-        zmean = azcam.fits.mean(Zero)
-        zsdev = azcam.fits.sdev(Zero)
+        zmean = senschar.fits.mean(Zero)
+        zsdev = senschar.fits.sdev(Zero)
 
         # open files
         im1 = pyfits.open(Ramp1)
@@ -172,7 +174,7 @@ class Ramp(Tester):
 
         # get mean and ffci data shaped to [ext][rows][cols]
         for ext in range(first_ext, last_ext):
-            azcam.log(ext, first_ext, last_ext)
+            senschar.log(ext, first_ext, last_ext)
             data_ffci.append(im1[ext].data - im2[ext].data)
             data_ffci[ext] = numpy.reshape(data_ffci[ext], [nrows, ncols])
             data_mean.append(im1[ext].data - zmean[ext - 1])
@@ -210,7 +212,7 @@ class Ramp(Tester):
                     else:
                         gains.append(g)
                 except Exception as message:
-                    azcam.log(message)
+                    senschar.log(message)
                     gains.append(0.0)
 
             gains.append(gains)
@@ -243,10 +245,10 @@ class Ramp(Tester):
         wspace = None
         hspace = None
         marksize = 5
-        plotstyle = azcam_console.plot.style_dot
+        plotstyle = senschar_console.plot.style_dot
 
         # setup PTC figure
-        f1 = azcam_console.plot.plt.figure(1)
+        f1 = senschar_console.plot.plt.figure(1)
         f1.clf()  # clear old data
         f1.text(
             0.5,
@@ -263,14 +265,14 @@ class Ramp(Tester):
             wspace=wspace,
             hspace=hspace,
         )
-        fig1 = azcam_console.plot.plt.subplot(1, 1, 1)
+        fig1 = senschar_console.plot.plt.subplot(1, 1, 1)
         fig1.xaxis.grid(1, which="both")  # log lines
         fig1.yaxis.grid(1)
 
         # axes
-        azcam_console.plot.plt.xlabel("Mean Signal [DN]", fontsize=mediumfont)
-        azcam_console.plot.plt.ylabel("Noise [DN]", fontsize=mediumfont)
-        ax = azcam_console.plot.plt.gca()
+        senschar_console.plot.plt.xlabel("Mean Signal [DN]", fontsize=mediumfont)
+        senschar_console.plot.plt.ylabel("Noise [DN]", fontsize=mediumfont)
+        ax = senschar_console.plot.plt.gca()
         for label in ax.yaxis.get_ticklabels():
             label.set_fontsize(smallfont)
         for label in ax.xaxis.get_ticklabels():
@@ -278,7 +280,7 @@ class Ramp(Tester):
             label.set_fontsize(smallfont)
 
         # setup gain figure
-        fig2 = azcam_console.plot.plt.figure(2)
+        fig2 = senschar_console.plot.plt.figure(2)
         fig2.clf()  # clear old data
         fig2.text(
             0.5,
@@ -297,7 +299,7 @@ class Ramp(Tester):
         )
 
         # ax1 is mean at bottom, ax2 is row number on top
-        ax1 = azcam_console.plot.plt.subplot(1, 1, 1)
+        ax1 = senschar_console.plot.plt.subplot(1, 1, 1)
         ax1.grid(1)
         ax1.set_ylabel(r"$\rm{Gain\ [e^{-}/DN]}$", fontsize=mediumfont)
         ax1.set_xlabel(r"$\rm{Mean\ [DN]}$", fontsize=mediumfont)
@@ -329,28 +331,28 @@ class Ramp(Tester):
                 mm.append(max(m))
 
             # ptc plot
-            azcam_console.plot.plt.figure(1)
+            senschar_console.plot.plt.figure(1)
             if self.logplot:
-                azcam_console.plot.plt.loglog(
+                senschar_console.plot.plt.loglog(
                     m,
                     sdev,
                     plotstyle[chan % self.num_chans],
                     markersize=marksize,
                 )
-                azcam_console.plot.plt.ylim(1)
-                azcam_console.plot.plt.xlim(1, 100000)
+                senschar_console.plot.plt.ylim(1)
+                senschar_console.plot.plt.xlim(1, 100000)
             else:
-                azcam_console.plot.plt.plot(
+                senschar_console.plot.plt.plot(
                     m,
                     sdev,
                     plotstyle[chan % self.num_chans],
                     markersize=marksize,
                 )
-                azcam_console.plot.plt.ylim(0)
-                azcam_console.plot.plt.xlim(0, 65000)
+                senschar_console.plot.plt.ylim(0)
+                senschar_console.plot.plt.xlim(0, 65000)
 
             # Gain plot
-            azcam_console.plot.plt.figure(2)
+            senschar_console.plot.plt.figure(2)
             ax2.plot(
                 list(range(self.num_points)),
                 g,
@@ -365,7 +367,7 @@ class Ramp(Tester):
                 break
 
         # save plots
-        azcam_console.plot.save_figure(1, "RampPtc.png")
-        azcam_console.plot.save_figure(2, "RampGain.png")
+        senschar_console.plot.save_figure(1, "RampPtc.png")
+        senschar_console.plot.save_figure(2, "RampGain.png")
 
         return

@@ -1,5 +1,5 @@
 """
-*azcam.fits* contains FITS image support functions for azcam.
+*senschar.fits* contains FITS image support functions for senschar.
 """
 
 import os
@@ -7,9 +7,9 @@ import time
 import typing
 import warnings
 
-import azcam
-import azcam.utils
-import azcam.exceptions
+import senschar
+import senschar.utils
+import senschar.exceptions
 import numpy
 import numpy.polynomial.polynomial as poly
 from astropy.io import fits as pyfits
@@ -23,7 +23,7 @@ def file_exists(filename: str) -> bool:
         True if the file exists.
     """
 
-    fe = azcam.utils.make_image_filename(filename)
+    fe = senschar.utils.make_image_filename(filename)
 
     return os.path.exists(fe)
 
@@ -44,7 +44,7 @@ def get_section(filename: str, section: str, extension: int = 0) -> list:
         section as `[first_col,last_col,first_row,last_row]`.
     """
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
 
     # get row limits
     datasec = get_keyword(filename, section, extension)
@@ -72,7 +72,7 @@ def get_keyword(filename: str, keyword: str, extension: int = 0) -> typing.Any:
         the specified keyword value.
     """
 
-    Image = azcam.utils.make_image_filename(filename)
+    Image = senschar.utils.make_image_filename(filename)
 
     hdr = pyfits.getheader(Image, extension)
     return hdr[keyword]
@@ -91,7 +91,7 @@ def edit_keyword(
         extension: image extension number.
     """
 
-    Image = azcam.utils.make_image_filename(filename)
+    Image = senschar.utils.make_image_filename(filename)
 
     with pyfits.open(Image, mode="update") as hdulist:
         prihdr = hdulist[0].header
@@ -111,7 +111,7 @@ def get_header(filename: str, extension: int = 0) -> object:
         the image header as a pyfits header object.
     """
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
 
     return pyfits.getheader(filename, extension)
 
@@ -140,7 +140,7 @@ def add_history(filename: str, history_string: str, extension: int = 0) -> None:
         value = value[:212]
 
     # write the keyword
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
 
     hdu = pyfits.open(filename, mode="update")
     hdu[extension].header.add_history(value)
@@ -160,7 +160,7 @@ def get_history(filename: str, extension: int = 0) -> str:
         string containing all HISTORY lines.
     """
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
 
     hdr = pyfits.getheader(filename, extension)
 
@@ -187,7 +187,7 @@ def get_extensions(filename: str) -> list:
         indices for the python `range` function to iterate over them.
     """
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
     with pyfits.open(filename) as hdulist:
         if "NEXTEND" in hdulist[0].header:
             num_ext = hdulist[0].header["NEXTEND"]
@@ -231,7 +231,7 @@ def arith(
     header = []  # header for output file
 
     # open Image1
-    filename1 = azcam.utils.make_image_filename(filename1)
+    filename1 = senschar.utils.make_image_filename(filename1)
     numext1, fext, lext = get_extensions(filename1)
     # im1 = pyfits.open(filename1, lazy_load_hdus=False)  # this is an hdulist
     with pyfits.open(filename1, lazy_load_hdus=False) as im1:
@@ -264,12 +264,12 @@ def arith(
     # open Image2 and get data
     else:
         SCALAR = 0
-        filename2 = azcam.utils.make_image_filename(filename2)
+        filename2 = senschar.utils.make_image_filename(filename2)
         numext2, fext, lext = get_extensions(filename2)
         with pyfits.open(filename2, lazy_load_hdus=False) as im2:
             if numext1 != numext2:
                 im2.close()
-                raise azcam.exceptions.AzcamError("unequal FITS image extensions")
+                raise senschar.exceptions.SenscharError("unequal FITS image extensions")
             if MEF:
                 data2 = []
                 for i in range(1, lext):
@@ -323,7 +323,7 @@ def arith(
     if filename3 == "":
         filename3 = filename1
         os.remove(filename3)
-    filename3 = azcam.utils.make_image_filename(filename3)
+    filename3 = senschar.utils.make_image_filename(filename3)
 
     if NewFile:
         if MEF:
@@ -453,13 +453,13 @@ def combine(
 
     numfiles = len(file_list)
     if numfiles < 2:
-        raise azcam.exceptions.AzcamError("two or more images are required")
+        raise senschar.exceptions.SenscharError("two or more images are required")
 
     header = []  # header for output file
     dataset = []  # combined data
 
     for fnum, f in enumerate(file_list):
-        filename = azcam.utils.make_image_filename(f)
+        filename = senschar.utils.make_image_filename(f)
 
         # overscan correct
         if overscan_correct > 0:
@@ -571,7 +571,7 @@ def mean(filename: str = "test", roi: list = []) -> list:
     roi = _get_data_roi(roi)
 
     means = []
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
 
     with pyfits.open(filename) as im:
         NumExt, first_ext, last_ext = get_extensions(filename)
@@ -597,7 +597,7 @@ def sdev(filename: str = "test", roi: list = []) -> list:
 
     roi = _get_data_roi(roi)
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
 
     with pyfits.open(filename) as im:
         sdevs = []
@@ -621,7 +621,7 @@ def stat(filename: str = "test", roi: list = []) -> list:
         list of `[[means], [sdevs], ROI]` for each image extension or ROI in each extension.
     """
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
     mean1 = mean(filename, roi)
     sdev1 = sdev(filename, roi)
 
@@ -643,7 +643,7 @@ def minimum(filename: str = "test", roi: str = []) -> list:
 
     roi = _get_data_roi(roi)
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
 
     with pyfits.open(filename) as im:
         NumExt, first_ext, last_ext = get_extensions(filename)
@@ -671,7 +671,7 @@ def maximum(filename: str = "test", roi: str = []) -> list:
 
     roi = _get_data_roi(roi)
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
 
     with pyfits.open(filename) as im:
         NumExt, first_ext, last_ext = get_extensions(filename)
@@ -696,7 +696,7 @@ def get_data(filename: str = "test", roi: str = []) -> list:
         list of pixel values.
     """
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
     roi = _get_data_roi(roi)
 
     with pyfits.open(filename) as im:
@@ -721,7 +721,7 @@ def resample(filename: str, resample: int = 2) -> None:
         resample: number of pixels to combine in each dimension.
     """
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
     numext, first_ext, last_ext = get_extensions(filename)
 
     with pyfits.open(
@@ -790,7 +790,7 @@ def colbias(filename: str = "test", fit_order: int = 3, margin_cols: int = 0) ->
         margin_cols: number of overscan columns to skip before correction.
     """
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.utils.make_image_filename(filename)
 
     # open image and get data
     with pyfits.open(filename, mode="update") as im:
@@ -877,21 +877,21 @@ def colbias(filename: str = "test", fit_order: int = 3, margin_cols: int = 0) ->
 # *********************************************************************************************
 # FITS support methods
 # *********************************************************************************************
-def _get_data_roi(azcam_roi: list = []) -> list:
+def _get_data_roi(senschar_roi: list = []) -> list:
     """
-    Converts an azcam ROI to a numpy ROI.
+    Converts an senschar ROI to a numpy ROI.
 
     Args:
-        azcam_roi: an azcam ROI list, i.e. one-based, columns first:
+        senschar_roi: an senschar ROI list, i.e. one-based, columns first:
         [first_col, last_col, first_row, last_row].
     Returns:
         the equivalent python ROI, zero-based, rows first: [first_row,last_row,first_col,last_col].
     """
 
-    if azcam_roi == []:
-        roi = azcam.db.imageroi if azcam.db.get("imageroi") else []
+    if senschar_roi == []:
+        roi = senschar.db.imageroi if senschar.db.get("imageroi") else []
     else:
-        roi = azcam_roi
+        roi = senschar_roi
 
     if isinstance(roi[0], list):
         roi = roi[0]  # use first roi

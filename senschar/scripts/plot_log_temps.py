@@ -4,9 +4,9 @@ Plot temperatures from logfile when tempcon.log_temps=1.
 
 import sys
 
-import azcam
-import azcam.utils
-import azcam_console.plot
+import senschar
+import senschar.utils
+import senschar_console.plot
 
 
 def plot_log_temps(samplestep=1, tickstep=1):
@@ -18,13 +18,13 @@ def plot_log_temps(samplestep=1, tickstep=1):
     tickstep = int(tickstep)
 
     # setup plot
-    fig, ax = azcam_console.plot.plt.subplots(constrained_layout=True)
+    fig, ax = senschar_console.plot.plt.subplots(constrained_layout=True)
     ax.grid(1)
-    azcam_console.plot.plt.title("Temperatures")
-    azcam_console.plot.plt.ylabel("Temperature [C]")
-    azcam_console.plot.plt.xlabel("Time")
+    senschar_console.plot.plt.title("Temperatures")
+    senschar_console.plot.plt.ylabel("Temperature [C]")
+    senschar_console.plot.plt.xlabel("Time")
 
-    with open("/data/DESI/logs/server.log", "r") as logfile:
+    with open("/data/temperatures.log", "r") as logfile:
         lines = logfile.readlines()
 
     # read every samplestep templog lines
@@ -43,7 +43,7 @@ def plot_log_temps(samplestep=1, tickstep=1):
     print("Time\t\tCamtemp\tDewtemp")
     for linenum in linenums:
         s = f"{lines[linenum].strip()}"
-        tokens = azcam.utils.parse(s)
+        tokens = senschar.util.parse(s)
         camtemp = float(tokens[-4])
         camtemps.append(camtemp)
         dewtemp = float(tokens[-3])
@@ -53,10 +53,14 @@ def plot_log_temps(samplestep=1, tickstep=1):
 
         print(f"{timestamp}\t{camtemp:.1f}\t{dewtemp:.1f}")
 
-        azcam_console.plot.plt.plot(times, camtemps, azcam_console.plot.style_lines[0])
-        azcam_console.plot.plt.plot(times, dewtemps, azcam_console.plot.style_lines[1])
+        senschar_console.plot.plt.plot(
+            times, camtemps, senschar_console.plot.style_lines[0]
+        )
+        senschar_console.plot.plt.plot(
+            times, dewtemps, senschar_console.plot.style_lines[1]
+        )
 
-    azcam_console.plot.plt.xticks(
+    senschar_console.plot.plt.xticks(
         times[::tickstep], rotation=90
     )  # adjust step size as needed
 

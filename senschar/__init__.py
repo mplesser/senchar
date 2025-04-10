@@ -1,6 +1,5 @@
 """
-AzCam is a software framework for the acquisition and analysis of image data
-from scientific imaging systems as well as the control of instrumentation.
+Scientific image sensor characterization package.
 """
 
 import typing
@@ -10,25 +9,22 @@ from importlib import metadata
 __version__ = metadata.version(__package__)
 __version_info__ = tuple(int(i) for i in __version__.split(".") if i.isdigit())
 
-from azcam.logger import AzCamLogger
+from senschar.logger import Logger
 
-from azcam.database import AzcamDatabase
+from senschar.database import Database
 
 # logger object
-logger: AzCamLogger = AzCamLogger()
+logger: Logger = Logger()
 
-# initially azcam.log() is print() but will usually be overwritten
+# initially senschar.log() is print() but will usually be overwritten
 log: typing.Callable = print
 
 # initial database but will ususally be overwritten by server or console
-db: AzcamDatabase = AzcamDatabase()
-
-mode = "server"
-"""azcam mode, usually server or console"""
+db: Database = Database()
 
 # cleanup namespace
 del metadata
 del typing
-del AzCamLogger
-del AzcamDatabase
+del Logger
+del Database
 # del database

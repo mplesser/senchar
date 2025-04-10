@@ -5,11 +5,11 @@ import shutil
 import numpy
 from astropy.io import fits as pyfits
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam_console.utils
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar_console.utils
+from senschar_console.testers.basetester import Tester
 
 
 class Gain(Tester):
@@ -63,14 +63,14 @@ class Gain(Tester):
 
         self.acquire()
 
-        cd = azcam.utils.curdir()
-        azcam.utils.curdir(self.imagefolder)
+        cd = senschar.util.curdir()
+        senschar.util.curdir(self.imagefolder)
 
         self.analyze()
 
         self.create_reports = createreport
 
-        azcam.utils.curdir(cd)
+        senschar.util.curdir(cd)
 
         return
 
@@ -80,11 +80,11 @@ class Gain(Tester):
         ExposureTime is the exposure time in seconds.
         """
 
-        azcam.log("Acquiring gain sequence")
+        senschar.log("Acquiring gain sequence")
 
         if self.exposure_time == -1:
-            ExposureTime = azcam.db.tools["exposure"].get_exposuretime()
-            azcam.log(
+            ExposureTime = senschar.db.tools["exposure"].get_exposuretime()
+            senschar.log(
                 f"Exposure time not specified, using current value of {ExposureTime:0.3f}"
             )
         else:
@@ -92,76 +92,76 @@ class Gain(Tester):
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
+        senschar.util.save_imagepars(impars)
 
         # create new subfolder
         if self.overwrite:
             if os.path.exists("gain"):
                 shutil.rmtree("gain")
-        currentfolder, subfolder = azcam_console.utils.make_file_folder("gain")
-        azcam.db.parameters.set_par("imagefolder", subfolder)
+        currentfolder, subfolder = senschar_console.utils.make_file_folder("gain")
+        senschar.db.parameters.set_par("imagefolder", subfolder)
 
         self.imagefolder = subfolder
 
-        azcam.db.parameters.set_par("imageincludesequencenumber", 1)
-        azcam.db.parameters.set_par("imageautoincrementsequencenumber", 1)
-        azcam.db.parameters.set_par("imageautoname", 0)  # manually set name
-        azcam.db.parameters.set_par("imagetest", 0)  # turn off TestImage
-        azcam.db.parameters.set_par("imageoverwrite", 1)
+        senschar.db.parameters.set_par("imageincludesequencenumber", 1)
+        senschar.db.parameters.set_par("imageautoincrementsequencenumber", 1)
+        senschar.db.parameters.set_par("imageautoname", 0)  # manually set name
+        senschar.db.parameters.set_par("imagetest", 0)  # turn off TestImage
+        senschar.db.parameters.set_par("imageoverwrite", 1)
 
         # clear device
         if self.clear_arrray:
-            azcam.db.tools["exposure"].test(0)
+            senschar.db.tools["exposure"].test(0)
 
         # set wavelength
         if self.wavelength > 0:
             wave = int(self.wavelength)
-            wave1 = azcam.db.tools["instrument"].get_wavelength()
+            wave1 = senschar.db.tools["instrument"].get_wavelength()
             wave1 = int(wave1)
             if wave1 != wave:
-                azcam.log(f"Setting wavelength to {wave} nm")
-                azcam.db.tools["instrument"].set_wavelength(wave)
-                wave1 = azcam.db.tools["instrument"].get_wavelength()
+                senschar.log(f"Setting wavelength to {wave} nm")
+                senschar.db.tools["instrument"].set_wavelength(wave)
+                wave1 = senschar.db.tools["instrument"].get_wavelength()
                 wave1 = int(wave1)
-            azcam.log(f"Current wavelength is {wave1} nm")
+            senschar.log(f"Current wavelength is {wave1} nm")
 
-        azcam.db.parameters.set_par("imageroot", "ptc.")
+        senschar.db.parameters.set_par("imageroot", "ptc.")
         for loop in range(self.number_pairs):
             if self.number_pairs > 1:
-                azcam.log(f"Starting gain sequence {loop + 1}/{self.number_pairs}")
+                senschar.log(f"Starting gain sequence {loop + 1}/{self.number_pairs}")
 
             # bias image
-            azcam.db.parameters.set_par("imagetype", "zero")
-            zerofilename = azcam.db.tools["exposure"].get_filename()
+            senschar.db.parameters.set_par("imagetype", "zero")
+            zerofilename = senschar.db.tools["exposure"].get_filename()
             self.image_zero = zerofilename
-            azcam.log("Taking bias exposure")
-            azcam.db.tools["exposure"].expose(0, "zero", "PTC bias")
+            senschar.log("Taking bias exposure")
+            senschar.db.tools["exposure"].expose(0, "zero", "PTC bias")
 
             # take dark
             if self.include_dark_images:
-                self.dark_frame = azcam.db.tools["exposure"].get_filename()
-                azcam.db.tools["exposure"].expose(ExposureTime, "dark", "PTC dark")
+                self.dark_frame = senschar.db.tools["exposure"].get_filename()
+                senschar.db.tools["exposure"].expose(ExposureTime, "dark", "PTC dark")
 
             # take flats
-            azcam.db.parameters.set_par("imagetype", self.exposure_type)
-            azcam.log(f"Taking two flats for {ExposureTime:0.3f} seconds")
-            flat1filename = azcam.db.tools["exposure"].get_filename()
+            senschar.db.parameters.set_par("imagetype", self.exposure_type)
+            senschar.log(f"Taking two flats for {ExposureTime:0.3f} seconds")
+            flat1filename = senschar.db.tools["exposure"].get_filename()
             self.image_flat1 = flat1filename
-            azcam.db.tools["exposure"].expose(
+            senschar.db.tools["exposure"].expose(
                 ExposureTime, self.exposure_type, "PTC frame 1"
             )
-            azcam.log("Image 1 finished")
-            flat2filename = azcam.db.tools["exposure"].get_filename()
+            senschar.log("Image 1 finished")
+            flat2filename = senschar.db.tools["exposure"].get_filename()
             self.image_flat2 = flat2filename
-            azcam.db.tools["exposure"].expose(
+            senschar.db.tools["exposure"].expose(
                 ExposureTime, self.exposure_type, "PTC frame 2"
             )
-            azcam.log("Image 2 finished")
+            senschar.log("Image 2 finished")
 
         # finish
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
-        azcam.log("Gain sequence finished")
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
+        senschar.log("Gain sequence finished")
 
         return
 
@@ -170,21 +170,21 @@ class Gain(Tester):
         Analyze a bias image and two flat field images to generate a PTC point.
         """
 
-        azcam.log("Analyzing gain sequence")
+        senschar.log("Analyzing gain sequence")
 
         rootname = "ptc."
 
         # bias image
-        _, StartingSequence = azcam_console.utils.find_file_in_sequence(rootname)
+        _, StartingSequence = senschar_console.utils.find_file_in_sequence(rootname)
         zerofilename = rootname + f"{StartingSequence:04d}"
-        zerofilename = azcam.utils.make_image_filename(zerofilename)
+        zerofilename = senschar.util.make_image_filename(zerofilename)
         SequenceNumber = StartingSequence
 
-        NumExt, _, _ = azcam.fits.get_extensions(zerofilename)
+        NumExt, _, _ = senschar.fits.get_extensions(zerofilename)
         NumExt = max(1, NumExt)
 
         # get ROI
-        self.roi = azcam_console.utils.get_image_roi()
+        self.roi = senschar_console.utils.get_image_roi()
         if len(self.roi) == 1:
             self.roi.append(self.roi[0])
 
@@ -210,12 +210,12 @@ class Gain(Tester):
                 darkfilename = None
 
             flat1filename = rootname + f"{SequenceNumber:04d}"
-            flat1filename = azcam.utils.make_image_filename(flat1filename)
+            flat1filename = senschar.util.make_image_filename(flat1filename)
             SequenceNumber += 1
             flat2filename = rootname + f"{SequenceNumber:04d}"
-            flat2filename = azcam.utils.make_image_filename(flat2filename)
+            flat2filename = senschar.util.make_image_filename(flat2filename)
 
-            # ExposureTime = float(azcam.fits.get_keyword(flat1filename, "EXPTIME"))
+            # ExposureTime = float(senschar.fits.get_keyword(flat1filename, "EXPTIME"))
 
             gain, noise, mean, sdev = self.measure_gain(
                 zerofilename, flat1filename, flat2filename, darkfilename
@@ -236,16 +236,18 @@ class Gain(Tester):
             self.sdev = [a + b for a, b in zip(self.sdev, sdev)]
 
             # get zero mean for Offset
-            zeromean = azcam.fits.mean(zerofilename, self.roi[1])
+            zeromean = senschar.fits.mean(zerofilename, self.roi[1])
             self.zero_mean = [a + b for a, b in zip(self.zero_mean, zeromean)]
 
-            azcam.log("Channel system_gain[e/DN] Noise[e]")
+            senschar.log("Channel system_gain[e/DN] Noise[e]")
             for i in range(len(self.system_gain)):
-                azcam.log(f"{i:02d}      {gain[i]:0.02f}             {noise[i]:0.01f}")
+                senschar.log(
+                    f"{i:02d}      {gain[i]:0.02f}             {noise[i]:0.01f}"
+                )
 
             SequenceNumber = SequenceNumber + 1
             zerofilename = rootname + f"{SequenceNumber:04d}"
-            zerofilename = azcam.utils.make_image_filename(zerofilename)
+            zerofilename = senschar.util.make_image_filename(zerofilename)
 
         # get means from sums
         self.system_gain = [x / loop for x in self.system_gain]
@@ -294,15 +296,15 @@ class Gain(Tester):
         Calculate gain and noise from a bias and photon transfer image pair.
         """
 
-        Zero = azcam.utils.make_image_filename(Zero)
-        Flat1 = azcam.utils.make_image_filename(Flat1)
-        Flat2 = azcam.utils.make_image_filename(Flat2)
+        Zero = senschar.util.make_image_filename(Zero)
+        Flat1 = senschar.util.make_image_filename(Flat1)
+        Flat2 = senschar.util.make_image_filename(Flat2)
 
         if Dark is not None:
-            Dark = azcam.utils.make_image_filename(Dark)
+            Dark = senschar.util.make_image_filename(Dark)
 
         # extensions are elements 1 -> NumExt
-        NumExt, first_ext, last_ext = azcam.fits.get_extensions(Zero)
+        NumExt, first_ext, last_ext = senschar.fits.get_extensions(Zero)
         if NumExt == 0:
             data_ffci = []
             gain = []
@@ -324,17 +326,17 @@ class Gain(Tester):
             ffci_sdev = [0]
 
         # get ROI
-        self.roi = azcam_console.utils.get_image_roi()
+        self.roi = senschar_console.utils.get_image_roi()
 
         # get zero mean and sigma
-        zmean = azcam.fits.mean(Zero, self.roi[1])
-        zsdev = azcam.fits.sdev(Zero, self.roi[1])
+        zmean = senschar.fits.mean(Zero, self.roi[1])
+        zsdev = senschar.fits.sdev(Zero, self.roi[1])
 
         if self.include_dark_images:
-            dmean = azcam.fits.mean(Dark, self.roi[0])
+            dmean = senschar.fits.mean(Dark, self.roi[0])
 
         # get flat mean for each extension
-        fmean = azcam.fits.mean(Flat1, self.roi[0])
+        fmean = senschar.fits.mean(Flat1, self.roi[0])
         for ext in range(first_ext, last_ext):
             if self.include_dark_images:
                 flat_mean.append(fmean[ext - 1] - dmean[ext - 1])
@@ -374,7 +376,7 @@ class Gain(Tester):
                 else:
                     gain.append(g)
             except Exception as message:
-                azcam.log(message)
+                senschar.log(message)
                 gain.append(0.0)
             noise.append(gain[ext] * zsdev[ext - 1])
 
@@ -443,9 +445,9 @@ class Gain(Tester):
 
     def fe55_gain(self):
         """
-        Set gain.system_gain to azcam.db.tools["fe55"].system_gain values.
+        Set gain.system_gain to senschar.db.tools["fe55"].system_gain values.
         """
 
-        self.system_gain = azcam.db.tools["fe55"].system_gain
+        self.system_gain = senschar.db.tools["fe55"].system_gain
 
         return

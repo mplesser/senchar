@@ -8,8 +8,8 @@ import sys
 import numpy as np
 from astropy.io import fits as fits_io
 
-import azcam
-import azcam.utils
+import senschar
+import senschar.utils
 
 
 def check_bits(filename: str) -> None:
@@ -21,7 +21,7 @@ def check_bits(filename: str) -> None:
         filename: image filename
     """
 
-    filename = azcam.utils.make_image_filename(filename)
+    filename = senschar.util.make_image_filename(filename)
     fits = fits_io.open(filename)
     print("%5s  " % "", end="")
     for bit in range(16):

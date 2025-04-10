@@ -1,16 +1,16 @@
 """
-Parameter handling tool for azcam.
+Parameter handling tool for senschar.
 
-There is one main paramater dictionary with multiple subdicts. A default subdict can be specified.  
+There is one main paramater dictionary with multiple subdicts. A default subdict can be specified.
 """
 
 import configparser
 import os
 import typing
 
-import azcam
-import azcam.utils
-import azcam.exceptions
+import senschar
+import senschar.utils
+import senschar.exceptions
 
 
 class Parameters(object):
@@ -28,7 +28,7 @@ class Parameters(object):
 
         self.default_pardict_name = default_dictname
 
-        azcam.db.cli["parameters"] = self
+        senschar.db.cli["parameters"] = self
 
     def read_parfile(self, parfilename: str = None) -> None:
         """
@@ -41,13 +41,13 @@ class Parameters(object):
         if parfilename is None:
             parfilename = self.par_file
             if parfilename is None:
-                azcam.exceptions.warning("Parameter file is not defined")
+                senschar.exceptions.warning("Parameter file is not defined")
                 return
 
         self.par_file = parfilename
 
         if not os.path.exists(parfilename):
-            azcam.exceptions.warning(f"Parameter file not found: {parfilename}")
+            senschar.exceptions.warning(f"Parameter file not found: {parfilename}")
             return
 
         cp = configparser.ConfigParser()
@@ -113,7 +113,7 @@ class Parameters(object):
 
         par_dictname = self.default_pardict_name
 
-        par_dict = azcam.db.parameters.par_dict.get(par_dictname)
+        par_dict = senschar.db.parameters.par_dict.get(par_dictname)
         if par_dict is None:
             return
         keys = par_dict.keys()
@@ -123,8 +123,8 @@ class Parameters(object):
         for parname in par_dict:
             value = par_dict[parname]
             if parname == "wd":
-                azcam.db.wd = value
-                azcam.utils.curdir(value)
+                senschar.db.wd = value
+                senschar.util.curdir(value)
             else:
                 value = par_dict[parname]
                 self.set_par(parname, value)
@@ -138,7 +138,7 @@ class Parameters(object):
 
         par_dictname = self.default_pardict_name
 
-        par_dict = azcam.db.parameters.par_dict.get(par_dictname)
+        par_dict = senschar.db.parameters.par_dict.get(par_dictname)
         if par_dict is None:
             return
         keys = par_dict.keys()
@@ -147,7 +147,7 @@ class Parameters(object):
 
         for parname in par_dict:
             if parname == "wd":
-                value = azcam.utils.curdir()
+                value = senschar.util.curdir()
             else:
                 value = self.get_par(parname)
             if value is None:
@@ -186,7 +186,7 @@ class Parameters(object):
 
         # check if parameter is in par_table
         try:
-            attribute = azcam.db.par_table[parameter]
+            attribute = senschar.db.par_table[parameter]
             tokens = attribute.split(".")
             numtokens = len(tokens)
 
@@ -198,9 +198,9 @@ class Parameters(object):
 
             # object1 must be a tool or the database
             if object1 == "db":
-                obj = azcam.db
+                obj = senschar.db
             else:
-                obj = azcam.db.tools[object1]
+                obj = senschar.db.tools[object1]
             for i in range(1, numtokens):
                 try:
                     obj = getattr(obj, tokens[i])
@@ -211,9 +211,9 @@ class Parameters(object):
         except KeyError:
             # check if value is known directly
             try:
-                value = azcam.db.parameters.par_dict[subdict][parameter]
+                value = senschar.db.parameters.par_dict[subdict][parameter]
             except KeyError:
-                azcam.exceptions.warning(
+                senschar.exceptions.warning(
                     f"Parameter {parameter} not available for get_par"
                 )
                 return None
@@ -231,7 +231,7 @@ class Parameters(object):
             subdict: subdict in which to set paramater
         """
 
-        parameter = azcam.utils.dequote(parameter)
+        parameter = senschar.util.dequote(parameter)
         parameter = parameter.lower()
 
         if subdict is None:
@@ -248,33 +248,33 @@ class Parameters(object):
 
         # check if parameter is in par_table
         try:
-            attribute = azcam.db.par_table[parameter]
+            attribute = senschar.db.par_table[parameter]
 
             # object must be a tool
             tokens = attribute.split(".")
             numtokens = len(tokens)
             if numtokens < 2:
-                azcam.log("%s not valid for parameter %s" % (attribute, parameter))
+                senschar.log("%s not valid for parameter %s" % (attribute, parameter))
                 return None
 
         except KeyError:
-            _, value = azcam.utils.get_datatype(value)
+            _, value = senschar.util.get_datatype(value)
 
             try:
-                azcam.db.parameters.par_dict[subdict][parameter] = value
+                senschar.db.parameters.par_dict[subdict][parameter] = value
             except KeyError:
-                if azcam.db.parameters.par_dict.get(subdict) is None:
-                    azcam.db.parameters.par_dict[subdict] = {}
-                azcam.db.parameters.par_dict[subdict][parameter] = value
+                if senschar.db.parameters.par_dict.get(subdict) is None:
+                    senschar.db.parameters.par_dict[subdict] = {}
+                senschar.db.parameters.par_dict[subdict][parameter] = value
             return None
 
         # first try to set value type
-        _, value = azcam.utils.get_datatype(value)
+        _, value = senschar.util.get_datatype(value)
         object1 = tokens[0]
 
         # run through tools
         try:
-            obj = azcam.db.tools[object1]
+            obj = senschar.db.tools[object1]
             for i in range(1, numtokens - 1):
                 obj = getattr(obj, tokens[i])
             # last time is actual object

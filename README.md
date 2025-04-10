@@ -1,6 +1,6 @@
 # Senschar
 
-Senschar is a software package used for the charcaterization of scientific image sensors.
+Scientific sensor image characterization package.
 
 ## Documentation
 

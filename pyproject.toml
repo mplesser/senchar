@@ -1,7 +1,7 @@
 [project]
 name = "senschar"
 version = "25.0"
-description = "Scientific sensor image characterization package"
+description = "Scientific image sensor characterization package"
 license = { file = "LICENSE" }
 readme = "README.md"
 keywords = ["ccd", "imaging", "astronomy", "sensors"]
@@ -38,4 +38,4 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project.scripts]
-azcammonitor = "senschar.__main__:main"
+senschar = "senschar.__main__:main"

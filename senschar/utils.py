@@ -1,11 +1,20 @@
 """
-*azcam_console.utils* contains general purpose support commands used throughout azcam_console.
+*senschar_console.utils* contains general purpose support commands used throughout senschar_console.
 """
 
 import os
 import shlex
 import sys
-from typing import List
+from typing import List, Any
+
+from PySide6.QtWidgets import QFileDialog
+
+if os.name == "nt":
+    import winsound
+
+import senschar
+import senschar.utils
+import senschar.exceptions
 
 
 # keyboard checking is optional
@@ -13,9 +22,6 @@ try:
     import msvcrt
 except Exception:
     pass
-
-import azcam
-import azcam.exceptions
 
 
 def curdir(folder: str = "") -> str:
@@ -43,7 +49,7 @@ def curdir(folder: str = "") -> str:
 
     reply = reply.replace("\\", "/")
 
-    azcam.db.wd = reply  # save result
+    senschar.db.wd = reply  # save result
 
     return reply
 
@@ -128,7 +134,7 @@ def make_image_filename(imagefile: str) -> str:
 
 def parse(string: str, set_type: bool = False) -> List[str]:
     """
-    Parse a string into tokens using the standard azcam rules.
+    Parse a string into tokens using the standard senschar rules.
     If setType is true, try and set data data type for each token.
 
     Args:
@@ -170,7 +176,7 @@ def parse(string: str, set_type: bool = False) -> List[str]:
     return tokens
 
 
-def get_datatype(value: any) -> list:
+def get_datatype(value: Any) -> list:
     """
     Determine the data type for an object and set the type if possible. A string such as "1.23"
     will result in a type "float" and "2" will result in type "int".
@@ -212,7 +218,7 @@ def get_datatype(value: any) -> list:
     return [attributetype, value]
 
 
-def prompt(prompt_message: str = "Enter a string", default: any = "") -> any:
+def prompt(prompt_message: str = "Enter a string", default: Any = "") -> Any:
     """
     Prints a message and waits for user input.
 
@@ -252,7 +258,9 @@ def check_keyboard(wait: bool = False) -> str:
     # TODO: map sequences like 'F1'
 
     if os.name != "nt":
-        raise azcam.exceptions.AzcamError("check_keyboard not supported on this OS")
+        raise senschar.exceptions.SenscharError(
+            "check_keyboard not supported on this OS"
+        )
 
     loop = 1
     key = ""
@@ -307,7 +315,7 @@ def show_menu(configs: dict) -> str:
         print("Enter configuration number: ", end="")
         choiceindex = input()
         if choiceindex == "q":
-            azcam.exceptions.warning("Quit detected")
+            senschar.exceptions.warning("Quit detected")
             return
         try:
             choiceindex = int(choiceindex)
@@ -345,17 +353,17 @@ def get_datafolder(datafolder: str | None = None):
     """
 
     if datafolder is None:
-        droot = os.environ.get("AZCAM_DATAROOT")
+        droot = os.environ.get("senschar_DATAROOT")
         if droot is None:
             if os.name == "posix":
                 droot = os.environ.get("HOME")
             else:
                 droot = "/"
             datafolder = os.path.join(
-                os.path.realpath(droot), "data", azcam.db.systemname
+                os.path.realpath(droot), "data", senschar.db.systemname
             )
         else:
-            datafolder = os.path.join(os.path.realpath(droot), azcam.db.systemname)
+            datafolder = os.path.join(os.path.realpath(droot), senschar.db.systemname)
     else:
         datafolder = os.path.realpath(datafolder)
 
@@ -370,11 +378,11 @@ def save_imagepars(imagepars: dict) -> None:
     imagepars is a dictionary.
 
     Args:
-        imagepars: dict of azcam.db.imageparnames names to save
+        imagepars: dict of senschar.db.imageparnames names to save
     """
 
-    for par in azcam.db.imageparnames:
-        imagepars[par] = azcam.db.parameters.get_par(par)
+    for par in senschar.db.imageparnames:
+        imagepars[par] = senschar.db.parameters.get_par(par)
 
     return
 
@@ -387,10 +395,10 @@ def restore_imagepars(imagepars: dict) -> None:
         imagepars: dictionary set with save_imagepars().
     """
 
-    for par in azcam.db.imageparnames:
+    for par in senschar.db.imageparnames:
         value = quoter(imagepars[par])
         imagepars[par] = value
-        azcam.db.parameters.set_par(par, value)
+        senschar.db.parameters.set_par(par, value)
 
     return
 
@@ -439,3 +447,269 @@ def quoter(input: str) -> str:
         output = f'"{input}"'
 
     return output
+
+
+def beep(frequency=2000, duration=500) -> None:
+    """
+    Play a sound.
+    Install beep on Linux systems.
+    """
+
+    if os.name == "posix":
+        os.system("beep -f %s -l %s" % (frequency, duration))
+    else:
+        winsound.Beep(frequency, duration)
+
+    return
+
+
+def find_file_in_sequence(file_root: str, file_number: int = 1) -> tuple:
+    """
+    Returns the Nth file in an image sequence where N is file_number (1 for first file).
+
+    Args:
+        file_root: image file root name.
+        file_number: image file number in sequence.
+
+    Returns:
+        tuple (filename,sequencenumber).
+    """
+
+    currentfolder = senschar.util.curdir()
+
+    for _, _, files in os.walk(currentfolder):
+        break
+
+    for f in files:
+        if f.startswith(file_root):
+            break
+
+    try:
+        if not f.startswith(file_root):
+            raise senschar.exceptions.SenscharError("image sequence not found")
+    except Exception:
+        raise senschar.exceptions.SenscharError("image sequence not found")
+
+    firstfile = senschar.util.fix_path(os.path.join(currentfolder, f))
+    firstsequencenumber = firstfile[-9:-5]
+    firstnum = firstsequencenumber
+    firstsequencenumber = int(firstsequencenumber)
+    sequencenumber = firstsequencenumber + file_number - 1
+    newnum = "%04d" % sequencenumber
+    filename = firstfile.replace(firstnum, newnum)
+
+    return (filename, sequencenumber)
+
+
+def make_file_folder(
+    subfolder: str, increment: bool = True, use_number: bool = False
+) -> tuple:
+    """
+    Creates a new subfolder in the current FileFolder.
+
+    Args:
+        subfolder: subfolder name to create
+        increment: - if True, subfolder name may be incremented to create a unique name
+        use_number: - if True, starts with '1' after Subfolder name (e.g. report1 not report)
+    Returns:
+        tuple (currentfolder,newfolder)
+    """
+
+    currentfolder = senschar.util.curdir()
+
+    sf = subfolder + "1" if use_number else subfolder
+
+    try:
+        newfolder = os.path.join(currentfolder, sf)  # new subfolder
+        os.mkdir(newfolder)
+        newfolder = senschar.util.fix_path(newfolder)
+    except Exception:
+        if not increment:
+            raise senschar.exceptions.SenscharError("could not make new subfolder")
+        else:
+            for i in range(1, 1000):
+                newfolder = os.path.join(
+                    currentfolder, subfolder + str(i)
+                )  # try a new subfolder name
+                try:
+                    os.mkdir(newfolder)
+                    newfolder = senschar.util.fix_path(newfolder)
+                    break
+                except Exception:  # error OK
+                    continue
+            if i == 999:
+                raise senschar.exceptions.SenscharError("could not make subfolder")
+
+    newfolder = senschar.util.fix_path(newfolder)
+
+    return (currentfolder, newfolder)
+
+
+def get_image_roi() -> list:
+    """
+    Get the data and noise regions of interest in image image coordinates.
+    Check for ROI's in the following order:
+      - senschar.db.imageroi if defined
+      - display.roi if defined
+
+    Returns:
+        list of ROIs
+    """
+
+    # database roi
+    if senschar.db.get("imageroi"):
+        if senschar.db.imageroi != []:
+            return senschar.db.imageroi
+
+    # display.roi
+    roi = []
+
+    try:
+        reply = senschar.db.tools["display"].get_rois(0, "image")
+    except AttributeError:
+        raise senschar.exceptions.SenscharError("cannot get ROI - display not found")
+    roi.append(reply)
+    reply = senschar.db.tools["display"].get_rois(1, "image")
+    if reply:
+        roi.append(reply)
+    else:
+        roi.append(roi[0])
+
+    return roi
+
+
+def set_image_roi(roi: list = []) -> None:
+    """
+    Set the global image region of interest "db.imageroi".
+    If roi is not specified, use display ROI.
+
+    Args:
+        roi: ROI list or []
+    """
+
+    # set directly with given value
+    if roi != []:
+        senschar.db.imageroi = roi
+        return
+
+    # use display ROIs
+    roi = []
+    try:
+        reply = senschar.db.tools["display"].get_rois(-1, "image")
+    except AttributeError:
+        raise senschar.exceptions.SenscharError("cannot set ROI - no display found")
+
+    if not reply:
+        raise senschar.exceptions.SenscharError("could not get display ROI")
+
+    senschar.db.imageroi = reply
+
+    return
+
+
+def get_tools(tool_names: list) -> list:
+    """
+    Return a list of tool objects from a list of their names.
+
+    Args:
+        tool_names: list of the tool names to get
+
+    Returns:
+        list of tool objects
+    """
+
+    tools = []
+
+    for tool in tool_names:
+        tool1 = senschar.db.tools[tool]
+        if tool1 is not None:
+            tools.append(tool1)
+        else:
+            tools.append(senschar.db.tools(tool))
+
+    return tools
+
+
+def find_file(filename, include_curdir=False) -> str:
+    """
+    Find the absolute filename for a file in the current search path.
+    Set include_curdir True to add curdir() to search path.
+
+    Args:
+        filename: Name of file.
+        include_curdir: True to include current folder in sys.path.
+    Returns:
+        Cleaned path name
+    Raises:
+        FileNotFoundError if file not found.
+
+    """
+
+    added_cd = 0
+    if include_curdir:
+        cd = senschar.util.curdir()
+        if cd not in sys.path:
+            sys.path.append(cd)
+            added_cd = 1
+
+    # absolute pathname
+    if os.path.isabs(filename):
+        if added_cd:
+            sys.path.remove(cd)
+        if os.path.exists(filename):
+            return filename
+        else:
+            raise FileNotFoundError(f'file "{filename}" not found')
+
+    file_found = 0
+    for path in sys.path:
+        if path == "":
+            pass
+        elif os.path.exists(os.path.join(path, filename)):
+            if os.path.isdir(os.path.join(path, filename)):  # no folders
+                continue
+            file_found = 1
+            break
+    if added_cd:
+        sys.path.remove(cd)
+
+    if file_found:
+        return os.path.normpath(os.path.join(path, filename))
+    else:
+        raise FileNotFoundError(f'file "{filename}" not found')
+
+    return
+
+
+def file_browser(
+    path: str = "", select_string: str = "*.*", label: str = ""
+) -> list | None:
+    """
+    Filebrowser GUI to select files.  This is the Qt version.
+
+    Args:
+        path: Starting path for selection.
+        select_string: Selection string like [('all files',('*.*'))] or *folder* to select folders.
+        label: Dialog window label.
+    Returns:
+        list of selected files/folders or None
+    """
+
+    if select_string == "folder":
+        data = QFileDialog.getExistingDirectory(caption=label, dir=path)
+        if data == "":
+            data = None
+        else:
+            data = [data]
+    else:
+        data = QFileDialog.getOpenFileNames(
+            caption=label,
+            dir=path,
+            filter=select_string,
+        )
+        if data[0] == []:
+            data = None
+        else:
+            data = data[0]
+
+    return data

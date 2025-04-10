@@ -4,11 +4,11 @@ import shutil
 
 import numpy
 
-import azcam
-import azcam.utils
-import azcam.fits
-import azcam_console.plot
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+import senschar_console.plot
+from senschar_console.testers.basetester import Tester
 
 
 class Linearity(Tester):
@@ -85,55 +85,55 @@ class Linearity(Tester):
         max_exposure is the maximum exposure time in seconds.
         """
 
-        azcam.log("Acquiring Linearity sequence")
+        senschar.log("Acquiring Linearity sequence")
 
         # save pars to be changed
         impars = {}
-        azcam.utils.save_imagepars(impars)
+        senschar.util.save_imagepars(impars)
 
         # create new subfolder
-        currentfolder, newfolder = azcam_console.utils.make_file_folder("linearity")
-        azcam.log(f"Linearity folder is {newfolder}")
-        azcam.db.parameters.set_par("imagefolder", newfolder)
+        currentfolder, newfolder = senschar_console.utils.make_file_folder("linearity")
+        senschar.log(f"Linearity folder is {newfolder}")
+        senschar.db.parameters.set_par("imagefolder", newfolder)
 
         # clear device
-        azcam.db.tools["exposure"].test(0)
+        senschar.db.tools["exposure"].test(0)
         imname = "test.fits"
-        bin1 = int(azcam.fits.get_keyword(imname, "CCDBIN1"))
-        bin2 = int(azcam.fits.get_keyword(imname, "CCDBIN2"))
+        bin1 = int(senschar.fits.get_keyword(imname, "CCDBIN1"))
+        bin2 = int(senschar.fits.get_keyword(imname, "CCDBIN2"))
         binning = bin1 * bin2
 
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par(
             "imageroot", "linearity."
         )  # for automatic data analysis
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par(
             "imageincludesequencenumber", 1
         )  # use sequence numbers
-        azcam.db.parameters.set_par("imageautoname", 0)  # manually set name
-        azcam.db.parameters.set_par(
+        senschar.db.parameters.set_par("imageautoname", 0)  # manually set name
+        senschar.db.parameters.set_par(
             "imageautoincrementsequencenumber", 1
         )  # inc sequence numbers
-        azcam.db.parameters.set_par("imagetest", 0)  # turn off TestImage
+        senschar.db.parameters.set_par("imagetest", 0)  # turn off TestImage
 
         # bias image
-        azcam.log(
+        senschar.log(
             "Taking Linearity bias: %s"
-            % os.path.basename(azcam.db.tools["exposure"].get_filename())
+            % os.path.basename(senschar.db.tools["exposure"].get_filename())
         )
-        azcam.db.tools["exposure"].expose(0, "zero", "Linearity bias")
+        senschar.db.tools["exposure"].expose(0, "zero", "Linearity bias")
 
-        azcam.db.parameters.set_par("imagetype", self.exposure_type)
+        senschar.db.parameters.set_par("imagetype", self.exposure_type)
 
         # Try exposure_level to get ExposureTime
         if len(self.exposure_levels) > 0:
-            detcal = azcam.db.tools["detcal"]
-            if not azcam.db.tools["detcal"].is_valid:
-                azcam.log("Detector not calibrated, cannot use exposure_level")
+            detcal = senschar.db.tools["detcal"]
+            if not senschar.db.tools["detcal"].is_valid:
+                senschar.log("Detector not calibrated, cannot use exposure_level")
             else:
-                meancounts = azcam.db.tools["detcal"].mean_counts[self.wavelength]
+                meancounts = senschar.db.tools["detcal"].mean_counts[self.wavelength]
 
                 if self.wavelength == -1:
-                    wave = azcam.db.tools["instrument"].get_wavelength()
+                    wave = senschar.db.tools["instrument"].get_wavelength()
                     wave = int(wave)
 
                 else:
@@ -142,8 +142,8 @@ class Linearity(Tester):
                 self.exposure_times = (
                     numpy.array(self.exposure_levels) / meancounts / binning
                 ) * (
-                    azcam.db.tools["gain"].system_gain[0]
-                    / azcam.db.tools["detcal"].system_gain[0]
+                    senschar.db.tools["gain"].system_gain[0]
+                    / senschar.db.tools["detcal"].system_gain[0]
                 )
 
         elif self.number_images_acquire != -1:  # max exposure time specified
@@ -164,25 +164,25 @@ class Linearity(Tester):
 
         # loop through exposures
         NumberExposures = len(self.exposure_times)
-        azcam.log("Exposure times will be:", self.exposure_times)
+        senschar.log("Exposure times will be:", self.exposure_times)
         for exp, exptime in enumerate(self.exposure_times):
-            azcam.log(
+            senschar.log(
                 "Taking linearity %d of %d image for %.3f seconds: %s"
                 % (
                     exp + 1,
                     NumberExposures,
                     exptime,
-                    os.path.basename(azcam.db.tools["exposure"].get_filename()),
+                    os.path.basename(senschar.db.tools["exposure"].get_filename()),
                 )
             )
-            azcam.db.tools["exposure"].expose(
+            senschar.db.tools["exposure"].expose(
                 exptime, self.exposure_type, "Linearity flat"
             )
 
         # finish
-        azcam.utils.restore_imagepars(impars)
-        azcam.utils.curdir(currentfolder)
-        azcam.log("Linearity sequence finished")
+        senschar.util.restore_imagepars(impars)
+        senschar.util.curdir(currentfolder)
+        senschar.log("Linearity sequence finished")
 
         return
 
@@ -191,10 +191,10 @@ class Linearity(Tester):
         Analyze a series of flats which have already been taken for linearity.
         """
 
-        azcam.log("Analyzing linearity sequence")
+        senschar.log("Analyzing linearity sequence")
 
         subfolder = "analysis"
-        startingfolder = azcam.utils.curdir()
+        startingfolder = senschar.util.curdir()
 
         if self.use_ptc_data:
             rootname = "ptc."
@@ -203,23 +203,25 @@ class Linearity(Tester):
 
         if self.overscan_correct or self.zero_correct:
             # create analysis subfolder
-            startingfolder, subfolder = azcam_console.utils.make_file_folder(subfolder)
+            startingfolder, subfolder = senschar_console.utils.make_file_folder(
+                subfolder
+            )
 
             # copy all image files to analysis folder
-            azcam.log("Making copy of image files for analysis")
+            senschar.log("Making copy of image files for analysis")
             for filename in glob.glob(os.path.join(startingfolder, "*.fits")):
                 shutil.copy(filename, subfolder)
 
-            azcam.utils.curdir(
+            senschar.util.curdir(
                 subfolder
             )  # move for analysis folder - assume it already exists
 
         else:
             pass
 
-        currentfolder = azcam.utils.curdir()
+        currentfolder = senschar.util.curdir()
 
-        _, StartingSequence = azcam_console.utils.find_file_in_sequence(rootname)
+        _, StartingSequence = senschar_console.utils.find_file_in_sequence(rootname)
 
         # Overscan correct all images
         SequenceNumber = StartingSequence
@@ -230,13 +232,13 @@ class Linearity(Tester):
             )
             loop = 0
             filelist = []
-            azcam.log("Overscan correct images")
+            senschar.log("Overscan correct images")
             while os.path.exists(nextfile):
                 filelist.append(nextfile)
 
                 # Overscan correct each image
-                azcam.log("Overscan correct image: %s" % os.path.basename(nextfile))
-                azcam.fits.colbias(nextfile, fit_order=self.fit_order)
+                senschar.log("Overscan correct image: %s" % os.path.basename(nextfile))
+                senschar.fits.colbias(nextfile, fit_order=self.fit_order)
 
                 SequenceNumber = SequenceNumber + 1
                 nextfile = (
@@ -249,9 +251,9 @@ class Linearity(Tester):
         SequenceNumber = StartingSequence
         if self.zero_correct:
             if self.overscan_correct:
-                debiased = azcam.db.tools["bias"].debiased_filename
+                debiased = senschar.db.tools["bias"].debiased_filename
             else:
-                debiased = azcam.db.tools["bias"].superbias_filename
+                debiased = senschar.db.tools["bias"].superbias_filename
             biassub = "biassub.fits"
 
             nextfile = (
@@ -260,7 +262,7 @@ class Linearity(Tester):
             )
             loop = 0
             while os.path.exists(nextfile):
-                azcam.fits.sub(nextfile, debiased, biassub)
+                senschar.fits.sub(nextfile, debiased, biassub)
                 os.remove(nextfile)
                 os.rename(biassub, nextfile)
 
@@ -271,13 +273,13 @@ class Linearity(Tester):
                 )
                 loop += 1
 
-        self.roi = azcam_console.utils.get_image_roi()
+        self.roi = senschar_console.utils.get_image_roi()
 
         zerofilename = rootname + "%04d" % StartingSequence
-        zerofilename = azcam.utils.make_image_filename(zerofilename)
+        zerofilename = senschar.util.make_image_filename(zerofilename)
         nextfile = zerofilename
 
-        self.NumExt, self.first_ext, self.last_ext = azcam.fits.get_extensions(
+        self.NumExt, self.first_ext, self.last_ext = senschar.fits.get_extensions(
             zerofilename
         )
 
@@ -287,13 +289,13 @@ class Linearity(Tester):
         SequenceNumber = StartingSequence + 1
         while os.path.exists(nextfile):
             flatfilename = rootname + "%04d" % SequenceNumber
-            flatfilename = azcam.utils.make_image_filename(flatfilename)
+            flatfilename = senschar.util.make_image_filename(flatfilename)
             # flatfilename=os.path.join(currentfolder,flatfilename)+'.fits'
 
-            exptime = float(azcam.fits.get_keyword(flatfilename, "EXPTIME"))
+            exptime = float(senschar.fits.get_keyword(flatfilename, "EXPTIME"))
 
             self.exptimes.append(exptime)
-            fmean = azcam.fits.mean(flatfilename, self.roi[0])
+            fmean = senschar.fits.mean(flatfilename, self.roi[0])
             mean = []
             for ext in range(self.first_ext, self.last_ext):
                 chan = ext - 1
@@ -338,13 +340,13 @@ class Linearity(Tester):
                             maxfit1 = x  # was x+1
                             m2 = m[chan - 1]  # was chan
                             break
-                # azcam.log(minfit1,maxfit1,m1,m2)
+                # senschar.log(minfit1,maxfit1,m1,m2)
                 maxfit1 = min(maxfit1, len(self.means) - 1)
                 if minfit1 > minfit:
                     minfit = minfit1
                 if maxfit1 < maxfit:
                     maxfit = maxfit1
-                azcam.log(
+                senschar.log(
                     f"Fit limits for chan {chan} are: {m1:.0f}:{m2:.0f} DN ({self.exptimes[minfit1]:.1f}:{self.exptimes[maxfit1]:.1f} secs)"
                 )
 
@@ -365,7 +367,9 @@ class Linearity(Tester):
                     maxdev=abs(r)
         self.max_residual=maxdev
         """
-        azcam.log(f"Largest non-linearity residual is {100. * self.max_residual:0.1f}%")
+        senschar.log(
+            f"Largest non-linearity residual is {100. * self.max_residual:0.1f}%"
+        )
 
         # calculate mean linearity
         for ext in range(self.first_ext, self.last_ext):
@@ -380,7 +384,7 @@ class Linearity(Tester):
                 self.grade = "PASS"
             else:
                 self.grade = "FAIL"
-            azcam.log(f"Grade = {self.grade}")
+            senschar.log(f"Grade = {self.grade}")
 
         if not self.grade_sensor or self.max_allowed_linearity == -1:
             self.grade = "UNDEFINED"
@@ -508,28 +512,28 @@ class Linearity(Tester):
 
         """
 
-        plotstyle = azcam_console.plot.style_dot
+        plotstyle = senschar_console.plot.style_dot
 
-        fig = azcam_console.plot.plt.figure()
+        fig = senschar_console.plot.plt.figure()
         fignum = fig.number
-        azcam_console.plot.move_window(fignum)
+        senschar_console.plot.move_window(fignum)
 
         # ax1 is linearity
         if self.plot_residuals:
             linplotnum = 211
         else:
             linplotnum = 111
-        ax1 = azcam_console.plot.plt.subplot(linplotnum)
+        ax1 = senschar_console.plot.plt.subplot(linplotnum)
         s = "Linearity"
-        azcam_console.plot.plt.title(s, fontsize=self.large_font)
-        azcam_console.plot.plt.ylabel("Mean [DN]", fontsize=self.small_font)
+        senschar_console.plot.plt.title(s, fontsize=self.large_font)
+        senschar_console.plot.plt.ylabel("Mean [DN]", fontsize=self.small_font)
 
         # ax2 is residuals
         if self.plot_residuals:
-            ax2 = azcam_console.plot.plt.subplot(212)
-            azcam_console.plot.plt.subplots_adjust(left=0.20, hspace=0.6)
+            ax2 = senschar_console.plot.plt.subplot(212)
+            senschar_console.plot.plt.subplots_adjust(left=0.20, hspace=0.6)
             s = "Linearity Residuals"
-            azcam_console.plot.plt.title(s, fontsize=self.large_font)
+            senschar_console.plot.plt.title(s, fontsize=self.large_font)
 
         nps = len(plotstyle)
 
@@ -538,17 +542,17 @@ class Linearity(Tester):
                 continue
 
             # plot linearity
-            # azcam_console.plot.plt.subplot(linplotnum)
+            # senschar_console.plot.plt.subplot(linplotnum)
             m = []
             for means in self.means:  # exp times
                 m.append(means[chan])
             ax1.plot(
                 self.exptimes[MinPoint : MaxPoint + 1], m[MinPoint : MaxPoint + 1], "k+"
             )
-            azcam_console.plot.plt.xlabel(
+            senschar_console.plot.plt.xlabel(
                 "Exposure Time [secs]", fontsize=self.small_font
             )
-            # azcam_console.plot.plt.ylim(0)
+            # senschar_console.plot.plt.ylim(0)
             ax1.grid(1)
 
             # plot fit
@@ -561,19 +565,21 @@ class Linearity(Tester):
 
             # plot residuals
             if self.plot_residuals:
-                # azcam_console.plot.plt.subplot(212)
+                # senschar_console.plot.plt.subplot(212)
                 residuals = self.residuals[chan]
                 ax2.plot(
                     self.exptimes[MinPoint : MaxPoint + 1],
                     100.0 * numpy.array(residuals[MinPoint : MaxPoint + 1]),
                     plotstyle[chan % nps],
                 )
-                azcam_console.plot.plt.xlabel(
+                senschar_console.plot.plt.xlabel(
                     "Exposure Time [secs]", fontsize=self.small_font
                 )
-                azcam_console.plot.plt.ylabel("Residual [%]", fontsize=self.small_font)
+                senschar_console.plot.plt.ylabel(
+                    "Residual [%]", fontsize=self.small_font
+                )
                 if self.plot_limits != []:
-                    azcam_console.plot.plt.ylim(
+                    senschar_console.plot.plt.ylim(
                         self.plot_limits[0], self.plot_limits[1]
                     )
                 ax2.grid(1)
@@ -595,8 +601,8 @@ class Linearity(Tester):
                 ax2.plot([left, right], [lower, lower], "b--", linewidth=0.7)
 
         # show and save plot
-        azcam_console.plot.plt.show()
-        azcam_console.plot.save_figure(fignum, self.linearity_plot)
+        senschar_console.plot.plt.show()
+        senschar_console.plot.save_figure(fignum, self.linearity_plot)
 
         return
 

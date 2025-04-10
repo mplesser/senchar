@@ -1,10 +1,10 @@
 import numpy
 from astropy.io import fits as pyfits
 
-import azcam
-import azcam.utils
-import azcam.fits
-from azcam_console.testers.basetester import Tester
+import senschar
+import senschar.utils
+import senschar.fits
+from senschar_console.testers.basetester import Tester
 
 
 class Eper(Tester):
@@ -45,7 +45,7 @@ class Eper(Tester):
         Not supported, use superflat image set
         """
 
-        raise azcam.exceptions.AzcamError(
+        raise senschar.exceptions.SenscharError(
             "EPER acquire not supported - use superflat to acquire data"
         )
 
@@ -54,14 +54,14 @@ class Eper(Tester):
         Analyze an exisiting SuperFlat image set for EPER.
         """
 
-        azcam.log("Analyzing EPER sequence")
+        senschar.log("Analyzing EPER sequence")
 
-        filename = azcam.utils.make_image_filename(self.filename)
+        filename = senschar.util.make_image_filename(self.filename)
 
-        startingfolder = azcam.utils.curdir()
+        startingfolder = senschar.util.curdir()
 
         # get image info
-        _, first_ext, last_ext = azcam.fits.get_extensions(filename)
+        _, first_ext, last_ext = senschar.fits.get_extensions(filename)
 
         # get image data (superflat is already bias corrected)
         eperim = pyfits.open(filename)
@@ -86,11 +86,11 @@ class Eper(Tester):
             ncols = hdr["NAXIS1"]
             nrows = hdr["NAXIS2"]
 
-            FirstBiasCol, _, FirstBiasRow, LastBiasRow = azcam.fits.get_section(
+            FirstBiasCol, _, FirstBiasRow, LastBiasRow = senschar.fits.get_section(
                 filename, "BIASSEC", chan + 1
             )
 
-            _, LastDataCol, _, LastDataRow = azcam.fits.get_section(
+            _, LastDataCol, _, LastDataRow = senschar.fits.get_section(
                 filename, "DATASEC", chan + 1
             )
 
@@ -116,12 +116,12 @@ class Eper(Tester):
             vbias = imbuf[FirstBiasRow : FirstBiasRow + self.number_bias_rows + 1, :]
             vbias = vbias.sum(0)
             vbiasmean = vbias.mean()
-            # azcam.log('vbias mean is',vbiasmean)
+            # senschar.log('vbias mean is',vbiasmean)
 
             # reject column defects, replace bias pixels > 3x mean
             for i, value in enumerate(vbias):
                 if value > self.reject_scale * vbiasmean:
-                    azcam.log(
+                    senschar.log(
                         "VCTE rejecting bad pixel - chan: {chan}, column: {i}, value: {value:0.0f}"
                     )
                     vbias[i] = vbiasmean  # replace defective pixels with mean
@@ -161,9 +161,9 @@ class Eper(Tester):
 
         # log results
         for chan, vcte in enumerate(self.vcte):
-            azcam.log(f"Chan. {chan:02d} VCTE: {vcte:.06f}")
+            senschar.log(f"Chan. {chan:02d} VCTE: {vcte:.06f}")
         for chan, hcte in enumerate(self.hcte):
-            azcam.log(f"Chan. {chan:02d} HCTE: {hcte:.06f}")
+            senschar.log(f"Chan. {chan:02d} HCTE: {hcte:.06f}")
 
         # grade entire device
         hcte1 = numpy.array(self.hcte).min()
@@ -178,14 +178,14 @@ class Eper(Tester):
         else:
             self.grade_vcte = "FAIL"
 
-        azcam.log(f"Grade VCTE = {self.grade_vcte}")
-        azcam.log(f"Grade HCTE = {self.grade_hcte}")
+        senschar.log(f"Grade VCTE = {self.grade_vcte}")
+        senschar.log(f"Grade HCTE = {self.grade_hcte}")
 
         if self.grade_hcte == "PASS" and self.grade_vcte == "PASS":
             self.grade = "PASS"
         else:
             self.grade = "FAIL"
-        azcam.log(f"Grade = {self.grade}")
+        senschar.log(f"Grade = {self.grade}")
 
         # define dataset
         self.dataset = {
@@ -199,7 +199,7 @@ class Eper(Tester):
         }
 
         # write output files
-        azcam.utils.curdir(startingfolder)
+        senschar.util.curdir(startingfolder)
         self.write_datafile()
         if self.create_reports:
             self.report()

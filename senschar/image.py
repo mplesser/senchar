@@ -4,19 +4,19 @@ Contains the Image class.
 
 import os
 
-import azcam
-import azcam.utils
-import azcam.exceptions
+import senschar
+import senschar.utils
+import senschar.exceptions
 import numpy
-from azcam.header import Header
-from azcam.image_focalplane import FocalPlane
-from azcam.image_headers import ImageHeaders
-from azcam.image_io import ImageIO
+from senschar.header import Header
+from senschar.image_focalplane import FocalPlane
+from senschar.image_headers import ImageHeaders
+from senschar.image_io import ImageIO
 
 
 class Image(ImageHeaders, ImageIO):
     """
-    Class to create and manipulate the standard azcam image object.
+    Class to create and manipulate the standard senschar image object.
     """
 
     def __init__(self, filename=""):
@@ -51,8 +51,8 @@ class Image(ImageHeaders, ImageIO):
         self.out_buffer = []
         # True if image was read from a file
         self.from_file = 0
-        # True if image was read from a file and has AzCam header
-        self.azcam_header = 0
+        # True if image was read from a file and has senschar header
+        self.senschar_header = 0
 
         self.transposed_image = 0
         self.flip_image = 0
@@ -118,7 +118,7 @@ class Image(ImageHeaders, ImageIO):
         Read FITS image file (standard or MEF).
         """
 
-        filename = azcam.utils.make_image_filename(filename)
+        filename = senschar.util.make_image_filename(filename)
         self.filename = filename
 
         self.filetype = self.filetypes["FITS"]
@@ -139,7 +139,7 @@ class Image(ImageHeaders, ImageIO):
         filetype is 0 for FITS, 1 for MEF, 2 for BIN, 6 for assembled.
         """
 
-        filename = azcam.utils.make_image_filename(filename)
+        filename = senschar.util.make_image_filename(filename)
         self.filename = filename
 
         # delete file if it exists
@@ -161,7 +161,7 @@ class Image(ImageHeaders, ImageIO):
         elif filetype == 6:
             self._write_asm_fits_file(filename)
         else:
-            raise azcam.exceptions.AzcamError("Invalid filetype for Image")
+            raise senschar.exceptions.SenscharError("Invalid filetype for Image")
 
         # optionally make a lock file indicating the image file has been written
         if self.make_lockfile:
@@ -177,7 +177,7 @@ class Image(ImageHeaders, ImageIO):
         """
 
         if not self.is_valid:
-            raise azcam.exceptions.AzcamError("image is not valid")
+            raise senschar.exceptions.SenscharError("image is not valid")
 
         if self.assembled:
             return

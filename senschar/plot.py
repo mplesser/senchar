@@ -1,7 +1,7 @@
 """
 # plot.py
 
-Contains plotting support for azcam.
+Contains plotting support for senschar.
 
 When working in IPython, use `pylab.ion()` for interactions after this import.
 """
@@ -13,11 +13,11 @@ import matplotlib
 import numpy
 from matplotlib import pyplot as plt
 
-import azcam
-import azcam.utils
-import azcam.exceptions
+import senschar
+import senschar.utils
+import senschar.exceptions
 
-#: plot data - *azcam_console.plot.plotdata*
+#: plot data - *senschar_console.plot.plotdata*
 plotdata = {
     "KeyPressed": "",
     "MouseButton": -1,
@@ -31,7 +31,7 @@ plotdata = {
 
 # can combine stypes like "bo-"
 
-#: list of markers with crosses  - *azcam_console.plot.style_x*
+#: list of markers with crosses  - *senschar_console.plot.style_x*
 style_x = [
     "bx",
     "rx",
@@ -51,7 +51,7 @@ style_x = [
     "rx",
     "gx",
 ]
-#: list of markers with circles - *azcam_console.plot.style_o*
+#: list of markers with circles - *senschar_console.plot.style_o*
 style_o = [
     "bo",
     "ro",
@@ -71,7 +71,7 @@ style_o = [
     "ro",
     "go",
 ]
-#: list of markers with dots - *azcam_console.plot.style_dot*
+#: list of markers with dots - *senschar_console.plot.style_dot*
 style_dot = [
     "b.",
     "r.",
@@ -91,7 +91,7 @@ style_dot = [
     "r.",
     "g.",
 ]
-#: list of line styles - *azcam_console.plot.style_lines*
+#: list of line styles - *senschar_console.plot.style_lines*
 style_lines = [
     "b-",
     "r-",
@@ -211,7 +211,7 @@ def tools(figure_number=1, include_motion: bool = 0) -> None:
         """
 
         if event.inaxes:
-            azcam.log("data coords", event.xdata, event.ydata)
+            senschar.log("data coords", event.xdata, event.ydata)
 
         return
 
@@ -332,10 +332,10 @@ def rescale(
     [xmin0, xmax0, ymin0, ymax0] = ax1.axis()  # get current values
 
     if not axes_values:
-        xmin = azcam.utils.prompt("Enter xmin value", xmin0)
-        xmax = azcam.utils.prompt("Enter xmax value", xmax0)
-        ymin = azcam.utils.prompt("Enter ymin value", ymin0)
-        ymax = azcam.utils.prompt("Enter ymax value", ymax0)
+        xmin = senschar.util.prompt("Enter xmin value", xmin0)
+        xmax = senschar.util.prompt("Enter xmax value", xmax0)
+        ymin = senschar.util.prompt("Enter ymin value", ymin0)
+        ymax = senschar.util.prompt("Enter ymax value", ymax0)
 
         xmin = float(xmin)
         xmax = float(xmax)
@@ -352,11 +352,11 @@ def rescale(
 
 def display(azimage: object, cmap: str = "gray") -> None:
     """
-    Make a matplotlib display of an azcam image.
+    Make a matplotlib display of an senschar image.
     cmap is a matplotlib color map.
 
     Args:
-        azmage: azcam image.
+        azmage: senschar image.
         cmap: color map name.
     """
 
@@ -375,7 +375,7 @@ def plot_image(
     cmap: str = "gray",
 ) -> None:
     """
-    Plot an Azcam image buffer nicely.
+    Plot an senschar image buffer nicely.
 
     Args:
         scale_type: one of (sdev, minmax, scaled, absolute).
@@ -403,7 +403,7 @@ def plot_image(
         z1 = m - scale_factor
         z2 = m + scale_factor
     else:
-        raise azcam.exceptions.AzcamError("unrecognized scale_type")
+        raise senschar.exceptions.SenscharError("unrecognized scale_type")
 
     plt.imshow(azimage.buffer, cmap=cmap, vmin=z1, vmax=z2, origin="lower")
 

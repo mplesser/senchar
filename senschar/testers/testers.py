@@ -19,7 +19,7 @@ from .superflat import Superflat
 
 def load_testers(testers="all"):
     """
-    Load the testers as azcam tools.
+    Load the testers as senschar tools.
     """
 
     if testers == "all":
