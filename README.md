@@ -1,13 +1,13 @@
-# Senschar
+# Senchar
 
 Scientific sensor image characterization package.
 
 ## Documentation
 
-See https://senschar.readthedocs.io.
+See https://senchar.readthedocs.io.
 
 ## Installation Example
 
 ```shell
-pip install senschar
+pip install senchar
 ```

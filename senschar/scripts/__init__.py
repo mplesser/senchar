@@ -1,3 +1,0 @@
-"""
-senscharserver scripts
-"""

@@ -1,3 +1,3 @@
 """
-senschar tests - not yet implemented
+senchar tests - not yet implemented
 """
