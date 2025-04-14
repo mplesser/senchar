@@ -1,11 +1,11 @@
-site_name: AzCam
+site_name: senchar
 site_author: Michael Lesser
-site_url: 'https://azcam.readthedocs.io/en/latest/'
+site_url: 'https://senchar.readthedocs.io'
 docs_dir: docs
 
 # Repository
 repo_name: mplesser
-repo_url: https://github.com/mplesser/azcam
+repo_url: https://github.com/mplesser/senchar
 edit_uri: ""
 
 theme:
