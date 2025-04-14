@@ -1,3 +1,3 @@
 # **Gain Map**
 
-::: azcam_console.testers.gainmap
+::: senchar.testers.gainmap

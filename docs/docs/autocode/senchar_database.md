@@ -1,0 +1,3 @@
+# Database Class
+
+::: senchar.database

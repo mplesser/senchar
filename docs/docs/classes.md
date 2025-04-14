@@ -1,40 +1,32 @@
 # Common Classes
 
-AzCam's common classes are often combined with the classes which define *tools* to provide common functionality cross multiple tools.  For example, the *controller*, *instrument*, and *telescope* tools may all use the `header` class to define header information.
+senchar's common classes are often combined with the classes which define *tools* to provide common functionality cross multiple tools.  For example, the *controller*, *instrument*, and *telescope* tools may all use the `header` class to define header information.
 
-The common classes used thorughout azcam is listed here.
-
-## Tool Class
-
-AzCam's *tools* are used to define and control a system.
-
-The base Tools class described below is inherited by all other tools. 
-
-[Documentation for the Tool class](autocode/azcam_tools.md)
+The common classes used thorughout senchar is listed here.
 
 ## Image Class
 
-The `Image Class` defines Azcam's image object. Within *azcam* it is also used to define 
-the *exposure.image* object which receives image data from a camera controller. It is imported automatically into the *azcam* namespace from the *azcam.image* module.
+The `Image Class` defines senchar's image object. Within *senchar* it is also used to define 
+the *exposure.image* object which receives image data from a camera controller. It is imported automatically into the *senchar* namespace from the *senchar.image* module.
 
 Usage Example:
 
-`im1 = azcam.Image('test.fits')`
+`im1 = senchar.Image('test.fits')`
 
-[Documentation for the Image class](autocode/azcam_image.md)
+[Documentation for the Image class](autocode/senchar_image.md)
 
 ## Database Class
 
-This class defines the `azcam.db` object.
+This class defines the `senchar.db` object.
 
-[Documentation for the Database](autocode/azcam_database.md)
+[Documentation for the Database](autocode/senchar_database.md)
 
 ## Header Class
 
-Azcam uses object-specific keyword indexed dictionaries to maintain textual informational about some tools. These are typically 
+senchar uses object-specific keyword indexed dictionaries to maintain textual informational about some tools. These are typically 
 called headers as they are used to provide information in image headers. The keywords and their corresponding values, data type, 
 and comment field are stored in each of the controller, instrument, and telescope header 
-dictionary. These dictionaries are manipulated by commands both from clients and internally in azcam. Most of the 
+dictionary. These dictionaries are manipulated by commands both from clients and internally in senchar. Most of the 
 values are written to the image file header (such as a FITS header) when an exposure begins.
 
 The header information is accessed through methods such as 
@@ -49,10 +41,10 @@ In general there is a method of the same name in both the header class and the a
 The telescope and instrument dictionaries are considered temporary and re-read every time an exposure starts. This 
 is so that rapidly changing data values do not become stale. Most dictionary information is written to the image file header if the selected image format supports headers. When an object such as an instrument or telescope is disabled, the corresponding object database information is deleted and no longer updated.
 
-[Documentation for the Header class](autocode/azcam_header.md)
+[Documentation for the Header class](autocode/senchar_header.md)
 
 ## Image Related Classes
 
-An *azcam* image is described by the Image, Focalplane, and WCS classes. The Focalplane class defines all aspects of the focal plane and sensor configuration used to create an image. The WCS class defines the World Coorindate System paramaters for the image.
+An *senchar* image is described by the Image, Focalplane, and WCS classes. The Focalplane class defines all aspects of the focal plane and sensor configuration used to create an image. The WCS class defines the World Coorindate System paramaters for the image.
 
-[Documentation for Image related classes](autocode/azcam_image.md)
+[Documentation for Image related classes](autocode/senchar_image.md)

@@ -1,3 +1,3 @@
 # **Dark Signal**
 
-::: azcam_console.testers.dark
+::: senchar.testers.dark

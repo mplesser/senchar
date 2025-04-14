@@ -1,3 +1,3 @@
 # **Photon Transfer Curve**
 
-::: azcam_console.testers.ptc
+::: senchar.testers.ptc

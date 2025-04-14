@@ -1,3 +1,3 @@
 # **Detector Calibration**
 
-::: azcam_console.testers.detcal
+::: senchar.testers.detcal

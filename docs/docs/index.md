@@ -5,14 +5,14 @@ Senchar is package used for characterization of scientific image sensors such as
 ## Installation
 
 ```shell
-pip install -e senchar
+pip install senchar
 ```
 
 ## Links
 
   - Main links
     - [senchar documentation (this site)](https://senchar.readthedocs.io)
-    - [GitHub repos](https://github.com/mplesser)
+    - [GitHub repo](https://github.com/mplesser/senchar)
 
   - Code details and links
     - [Classes](classes.md)

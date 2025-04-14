@@ -4,7 +4,7 @@ import subprocess
 
 import senchar
 import senchar.utils
-from senchar_console.testers.report import Report
+from senchar.testers.report import Report
 from senchar.tools.tools import Tools
 
 

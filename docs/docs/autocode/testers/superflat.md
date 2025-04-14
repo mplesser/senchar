@@ -1,3 +1,3 @@
 # **Superflat**
 
-::: azcam_console.testers.superflat
+::: senchar.testers.superflat

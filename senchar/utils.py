@@ -1,5 +1,5 @@
 """
-*senchar.utils* contains general purpose support commands used throughout senchar_console.
+*senchar.utils* contains general purpose support commands used throughout senchar.
 """
 
 import os
@@ -597,7 +597,7 @@ def get_tools(tool_names: list) -> list:
     return tools
 
 
-def find_file(filename, include_curdir=False) -> str:
+def find_file(filename: str, include_curdir: bool = False) -> str:
     """
     Find the absolute filename for a file in the current search path.
     Set include_curdir True to add curdir() to search path.

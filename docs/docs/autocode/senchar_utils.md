@@ -1,3 +1,3 @@
 # Utility Methods
 
-::: azcam.utils
+::: senchar.utils

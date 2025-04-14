@@ -2,8 +2,8 @@
 
 ## **Base display class**
 
-::: azcam.tools.display.Display
+::: senchar.display.Display
 
 ## **SAO DS9 display class**
 
-::: azcam.tools.ds9display.Ds9Display
+::: senchar.ds9display.Ds9Display

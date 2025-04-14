@@ -1,3 +1,3 @@
 # **Linearity**
 
-::: azcam_console.testers.linearity
+::: senchar.testers.linearity

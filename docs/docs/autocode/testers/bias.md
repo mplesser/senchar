@@ -1,3 +1,3 @@
 # **Bias**
 
-::: azcam_console.testers.bias
+::: senchar.testers.bias
