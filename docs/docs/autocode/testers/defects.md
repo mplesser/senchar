@@ -1,3 +1,0 @@
-# **Defects**
-
-::: senchar.testers.defects

@@ -1,3 +1,0 @@
-# **Linearity**
-
-::: senchar.testers.linearity

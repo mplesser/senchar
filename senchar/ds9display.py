@@ -4,7 +4,7 @@ Contains the Ds9Display class.
 
 """
 Note: This is a special tool as it is used by server and clients and so does not use 
-the base Tools class.
+the base Tool class.
 """
 
 import os

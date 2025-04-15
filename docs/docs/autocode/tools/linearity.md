@@ -1,0 +1,3 @@
+# **Linearity**
+
+::: senchar.tools.linearity

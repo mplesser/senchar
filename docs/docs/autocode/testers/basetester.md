@@ -1,3 +1,0 @@
-# **BaseTester**
-
-::: senchar.testers.basetester

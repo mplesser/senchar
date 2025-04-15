@@ -46,6 +46,9 @@ class Database(object):
     logger: object
     """logger object"""
 
+    imageroi: list = []
+    """ image region-of-interest"""
+
     # *************************************************************************
     # parameter table
     # *************************************************************************
@@ -155,9 +158,6 @@ class Database(object):
           name: name of attribute to set
           value: value of attribute to be set
         """
-
-        # if not hasattr(self, name):
-        #    return
 
         setattr(self, name, value)
 

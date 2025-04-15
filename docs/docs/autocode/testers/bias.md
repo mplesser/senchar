@@ -1,3 +1,0 @@
-# **Bias**
-
-::: senchar.testers.bias
