@@ -97,9 +97,6 @@ class Bias(Tool):
         nextfile, starting_sequence = senchar.utils.find_file_in_sequence(rootname)
         sequence_number = starting_sequence
 
-        # ROI for stats
-        self.roi = senchar.utils.get_image_roi()
-
         # all images must have same image sections
         numext, first_ext, last_ext = senchar.fits.get_extensions(nextfile)
         self._numchans = max(1, numext)

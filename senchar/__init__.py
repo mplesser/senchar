@@ -3,19 +3,19 @@ Scientific image sensor characterization package.
 """
 
 import typing
-from importlib import metadata
+import importlib.metadata
 from senchar.database import Database
 
-__version__ = metadata.version(__package__)
-__version_info__ = tuple(int(i) for i in __version__.split(".") if i.isdigit())
+# senchar version, from pyproject.toml
+__version__ = importlib.metadata.version("senchar")
 
+# senchar.db is used everywhere
 db = Database()
-db.version = __version__
 
-# placeholder for log
+# senchar.log() is used everywhere, initially just print()
 log = print
 
 # cleanup namespace
-del metadata
 del typing
 del Database
+del importlib

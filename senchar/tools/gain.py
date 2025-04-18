@@ -94,8 +94,6 @@ class Gain(Tool):
 
         # get ROI
         self.roi = senchar.utils.get_image_roi()
-        if len(self.roi) == 1:
-            self.roi.append(self.roi[0])
 
         # these will be mean values if more than one sequence is analyzed
         self.system_gain = [0] * NumExt

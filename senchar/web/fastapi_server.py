@@ -1,42 +1,18 @@
 """
 Configure and start fastapi application using uvicorn.
-Import this after all configuration has been completed.
-All API commands suported here must start with ""http://locahost:xxxx/api/" where xxxx is the
-port number like 2402.
-
-Query string example: "http://localhost:2402/api/set_filter?filter=1&filter_id=2"
-
-JSON example:
-    data = {
-        "command": "set_par",
-        "args": [],
-        "kwargs": {"parameter": "imagetest", "value": 3333},
-    }
-    r = requests.post("http://localhost:2403/api", json=data1)
-    print(r.status_code, r.json())
-
-Default response is JSON:
-    response = {
-        "message": "Finished",
-        "command": urlparse(url).path,
-        "data": reply,
-    }
-
 """
 
 import os
 import threading
 
 import uvicorn
-from fastapi import FastAPI, Request, APIRouter, HTTPException
-from fastapi.responses import FileResponse
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.wsgi import WSGIMiddleware
 
-
 import senchar
-from senchar import exceptions
+from senchar.web.status.status_web import StatusWeb
 
 
 class WebServer(object):
@@ -46,16 +22,16 @@ class WebServer(object):
 
     def __init__(self):
         self.templates_folder = ""
-        self.index = "index.html"
-        self.favicon_path = None
+        self.index = ""
+        self.favicon_path = ""
 
         self.logcommands = 0
         self.logstatus = 0
-        self.message = ""  # customized message
-        self.datafolder = None
+        self.message = ""
+        self.datafolder = ""
 
         # port for webserver
-        self.port = None
+        self.port = 2500
 
         self.is_running = 0
 
@@ -70,27 +46,17 @@ class WebServer(object):
         app = FastAPI()
         self.app = app
 
-        if self.datafolder is None:
+        if self.datafolder == "":
             self.datafolder = os.path.dirname(__file__)
 
-        if self.favicon_path is None:
+        if self.favicon_path == "":
             self.favicon_path = os.path.join(os.path.dirname(__file__), "favicon.ico")
 
-        self.index = os.path.join(os.path.dirname(__file__), self.index)
-        self.version = 1  # API version
+        if self.index == "":
+            self.index = os.path.join(os.path.dirname(__file__), "index.html")
 
         # Plotly Dash webs
-        expweb = ExposureWeb()
-        expweb.logcommands = 1
-        expweb.logstatus = 0
-        queueweb = QueueWeb()
-        queueweb.logcommands = 1
-        queueweb.logstatus = 0
         statusweb = StatusWeb()
-        statusweb.logcommands = 1
-        statusweb.logstatus = 0
-        app.mount("/exposure", WSGIMiddleware(expweb.app.server))
-        app.mount("/queue", WSGIMiddleware(queueweb.app.server))
         app.mount("/status", WSGIMiddleware(statusweb.app.server))
 
         # templates folder
@@ -110,109 +76,9 @@ class WebServer(object):
                 {
                     "request": request,
                     "message": self.message,
-                    "webport": senchar.db.cmdserver.port + 1,
+                    "webport": self.port,
                 },
             )
-
-        # ******************************************************************************
-        # Set API version: /api/set_version?version=2
-        # ******************************************************************************
-        @app.get("/api/set_version", response_class=JSONResponse)
-        async def set_version(request: Request, command: str = None):
-
-            qpars = request.query_params
-            self.version = int(qpars["version"])
-
-            response = {
-                "message": "Finished",
-                "command": f"api.set_version",
-                "data": self.version,
-            }
-
-            return JSONResponse(response)
-
-        @app.get("/favicon.ico", include_in_schema=False)
-        async def favicon():
-            return FileResponse(self.favicon_path)
-
-        # ******************************************************************************
-        # Example of a special case: /api/exposure/get_status
-        # ******************************************************************************
-        @app.get("/api/exposure/get_status", response_class=JSONResponse)
-        async def expstatus(request: Request, command: str = None):
-
-            expstatus = senchar.db.api.get_status()
-
-            response = {
-                "message": "Finished",
-                "command": f"exposure.get_status",
-                "data": expstatus,
-            }
-
-            return JSONResponse(response)
-
-        # ******************************************************************************
-        # API interface - ../api/command or ../api JSON
-        # ******************************************************************************
-
-        @app.post("/api", response_class=JSONResponse)
-        @app.get("/api/{command:path}", response_class=JSONResponse)
-        async def api(request: Request, command: str = None):
-            """
-            Remote web api commands.
-            """
-
-            if self.version == 1 or self.version == 2:
-
-                # JSON
-                if command is None:
-                    args = await request.json()
-                    try:
-                        toolid = senchar.db.api
-                        command = getattr(toolid, args["command"])
-
-                        arglist = args["args"]
-                        kwargs = args["kwargs"]
-                        reply = command(*arglist, **kwargs)
-                    except Exception as e:
-                        reply = repr(e)
-                        senchar.log(e)
-
-                    response = {
-                        "message": "Finished",
-                        "command": f"api.{args['command']}",
-                        "data": reply,
-                    }
-
-                    return JSONResponse(response)
-
-                # query string
-                url = command
-                qpars = request.query_params
-
-                if self.logcommands:
-                    senchar.log(url, prefix="Web-> ")
-
-                reply = self.web_command(url, qpars)
-
-                if self.logcommands:
-                    senchar.log(reply, prefix="---->   ")
-
-                return JSONResponse(reply)
-
-            else:
-
-                # query string
-                url = command
-                qpars = request.query_params
-
-                response = {
-                    "message": "Finished",
-                    "command": url,
-                    "data": "Invalid API version",
-                }
-
-                return JSONResponse(response)
 
     # ******************************************************************************
     # webserver methods
@@ -243,9 +109,6 @@ class WebServer(object):
 
         self.initialize()
 
-        if self.port is None:
-            self.port = senchar.db.cmdserver.port + 1
-
         senchar.log(f"Starting webserver - listening on port {self.port}")
 
         # uvicorn.run(self.app)
@@ -262,29 +125,3 @@ class WebServer(object):
         self.is_running = 1
 
         return
-
-    def web_command(self, url, qpars=None):
-        """
-        Parse and execute a command string received as a URL.
-        Returns the reply as a JSON packet.
-        """
-
-        try:
-            method = url
-            kwargs = qpars._dict
-
-            caller = getattr(senchar.db.api, method)
-            reply = caller() if kwargs is None else caller(**kwargs)
-
-        except Exception as e:
-            senchar.log(e)
-            reply = f"invalid API command: {url}"
-
-        # generic response
-        response = {
-            "message": "Finished",
-            "command": url,
-            "data": reply,
-        }
-
-        return response
