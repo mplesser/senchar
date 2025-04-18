@@ -1,6 +1,6 @@
 # Home
 
-Senchar is package used for characterization of scientific image sensors such as CCDs and CMOS imagers.
+Senchar is python package used for characterization of scientific image sensors such as CCDs and CMOS imagers. It is based on, but independent from, the [azcam](https://azcam.readthedocs.io/) package developed at the University of Arizona [Imaging Technology Laboratory](https://www.itl.arizona.edu/).
 
 ## Installation
 
@@ -21,10 +21,10 @@ pip install senchar
     - [Advanced concepts](advanced.md)
 
 ## Scripts
-Scripts are functions contained in python code modules of the same name. They may be loaded automatically during enviroment configuration and can be found in the `db.scripts` dictionary. Scripts defined on the server side are not available as remote commands. An example script to measure system pressures might be:
+Scripts are functions contained in python code modules of the same name. They may be loaded automatically during enviroment configuration and can be found in the `db.scripts` dictionary. An example script to measure system pressures might be:
 
 ```python
-get_pressures(2.0, "get_pressures.log", 1)
+plot_images("/data")
 ```
 
 ## Configuration Folders

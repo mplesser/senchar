@@ -25,12 +25,12 @@ def show_histogram(filename: str) -> None:
     data = im1.buffer
 
     # make histogram
-    HistY, HistX = numpy.histogram(data, bins="auto")
-    centers = (HistX[:-1] + HistX[1:]) / 2
+    hist_y, hist_x = numpy.histogram(data, bins="auto")
+    centers = (hist_x[:-1] + hist_x[1:]) / 2
 
     # plot
     fig, ax = senchar.plot.plt.subplots(constrained_layout=False)
-    senchar.plot.plt.semilogy([int(x) for x in centers], HistY)
+    senchar.plot.plt.semilogy([int(x) for x in centers], hist_y)
     xlabel = "Pixel Value"
     ylabel = "Number of Events"
     title = "Image Histogram"

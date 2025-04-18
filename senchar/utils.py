@@ -5,6 +5,8 @@
 import os
 import shlex
 import sys
+import importlib
+import importlib.util
 from typing import List, Any
 
 from PySide6.QtWidgets import QFileDialog
@@ -698,3 +700,61 @@ def bf():
 def sroi():
     """Shortcut for set_image_roi()."""
     set_image_roi()
+
+
+def load_scripts(package_list: list = [], folder_list: list = []) -> None:
+    """
+    Load scripts from a list of packages and/or a list of folders, into senchar.db.scripts.
+    """
+
+    folders = []
+    for package in package_list:
+        spec = importlib.util.find_spec(package)
+        if spec is not None:
+            folder = spec.submodule_search_locations[0]
+            folders.append(folder)
+            continue
+
+    pyfiles = []
+    for folder in folders:
+
+        # bring all .py modules with same function name into namespace
+        _, _, filenames = next(os.walk(folder))
+        for file1 in filenames:
+            if file1.endswith(".py"):
+                pyfiles.append(file1[:-3])
+        if "__init__" in pyfiles:
+            pyfiles.remove("__init__")
+
+        for pfile in pyfiles:
+            try:
+                mod = importlib.import_module(f"{package}.{pfile}")
+                func = getattr(mod, pfile)
+                senchar.db.scripts[pfile] = func
+            except Exception as e:
+                senchar.log(e)
+                senchar.exceptions.warning(f"Could not import script {pfile}")
+
+    folders = []
+    pyfiles = []
+    for folder in folder_list:
+
+        sys.path.append(folder)
+        _, _, filenames = next(os.walk(folder))
+        for file1 in filenames:
+            if file1.endswith(".py"):
+                pyfiles.append(file1[:-3])
+        if "__init__" in pyfiles:
+            pyfiles.remove("__init__")
+        folders.append(folder)
+
+        for pfile in pyfiles:
+            try:
+                mod = importlib.import_module(f"{pfile}")
+                func = getattr(mod, pfile)
+                senchar.db.scripts[pfile] = func
+            except Exception as e:
+                senchar.log(e)
+                senchar.exceptions.warning(f"Could not import script {pfile}")
+
+    return

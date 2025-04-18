@@ -12,8 +12,6 @@ import os
 
 import senchar
 from senchar.tools import *
-from senchar.parameters import Parameters
-from senchar.web.fastapi_server import WebServer
 from senchar import db
 
 # default values (useful)
@@ -22,15 +20,28 @@ db.datafolder = "/data/DESI"
 db.imageroi = [[500, 700, 500, 700], [2050, 2060, 500, 700]]
 
 # parameters (useful)
-params = Parameters()
-parfile = os.path.join(db.datafolder, "parameters", "senchar.ini")
-params.read_parfile(parfile)
-params.update_pars()
-del parfile
-del Parameters
+if 1:
+    from senchar.parameters import Parameters
+
+    params = Parameters()
+    parfile = os.path.join(db.datafolder, "parameters", "senchar.ini")
+    params.read_parfile(parfile)
+    params.update_pars()
+    del parfile
+    del Parameters
+
+# scripts (optional)
+if 1:
+    from senchar.utils import load_scripts
+
+    load_scripts(["senchar.scripts"], ["/data/scripts"])
+    for name in db.scripts:
+        globals()[name] = db.scripts[name]  # add to module namespace for import
 
 # web server (optional)
 if 0:
+    from senchar.web.fastapi_server import WebServer
+
     db.webserver = WebServer()
     db.webserver.start()
     del WebServer

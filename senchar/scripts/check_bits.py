@@ -22,20 +22,20 @@ def check_bits(filename: str) -> None:
     """
 
     filename = senchar.utils.make_image_filename(filename)
-    fits = fits_io.open(filename)
-    print("%5s  " % "", end="")
-    for bit in range(16):
-        print(f"bit{bit:02} ", end="")
-    print("")
-    for ext, hdu in enumerate(fits[1:], start=1):
-        print(f"HDU{ext:02}  ", end="")
-        data = hdu.data.astype(np.int16)
-        npix = float(data.size)
+    with fits_io.open(filename) as fitsfile:
+        print("%5s  " % "", end="")
         for bit in range(16):
-            nbit = np.sum((data & (1 << bit)) > 0)
-            fbit = nbit / npix
-            print(f"{fbit:5.3f} ", end="")
+            print(f"bit{bit:02} ", end="")
         print("")
+        for ext, hdu in enumerate(fitsfile[1:], start=1):
+            print(f"HDU{ext:02}  ", end="")
+            data = hdu.data.astype(np.uint16)
+            npix = float(data.size)
+            for bit in range(16):
+                nbit = np.sum((data & (1 << bit)) > 0)
+                fbit = nbit / npix
+                print(f"{fbit:5.3f} ", end="")
+            print("")
 
 
 if __name__ == "__main__":
