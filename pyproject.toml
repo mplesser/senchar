@@ -1,6 +1,6 @@
 [project]
 name = "senchar"
-version = "25.0.1"
+version = "25.0.2"
 description = "Scientific image sensor characterization package"
 license = { file = "LICENSE" }
 readme = "README.md"
