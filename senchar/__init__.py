@@ -11,6 +11,7 @@ __version__ = importlib.metadata.version("senchar")
 
 # senchar.db is used everywhere
 db = Database()
+db.version = __version__
 
 # senchar.log() is used everywhere, initially just print()
 log = print

@@ -574,19 +574,6 @@ class FocalPlane(ObjectHeaderMethods):
             self.row_bin,
         ]
 
-    def roi_reset(self):
-        """
-        Resets detector ROI values to full frame, current binning.
-        """
-
-        # get focalplane format
-        reply = self.get_format()
-
-        # update controller shifting parameters
-        self.set_roi(1, reply[0], 1, reply[4], -1, -1)
-
-        return reply
-
     def set_amp_positions(self):
         """
         Calculates amplifiers positions including gaps between amplifiers and CCDs

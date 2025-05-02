@@ -52,6 +52,9 @@ class Tool(Report):
         self.initialize()
         self.reset()
 
+        # add tool to dict
+        senchar.db.tools[tool_id] = self
+
     def initialize(self):
         """
         Initialize tool.

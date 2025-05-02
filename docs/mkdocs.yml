@@ -1,6 +1,6 @@
 site_name: senchar
 site_author: Michael Lesser
-site_url: 'https://senchar.readthedocs.io/en/latest/'
+site_url: 'https://senchar.readthedocs.io'
 docs_dir: docs
 
 # Repository
@@ -19,10 +19,8 @@ theme:
   features:
     navigation.sections
     navigation.instant
-    navigation.tabs
-    navigation.tabs.sticky
-    navigation.top
     navigation.path
+    navigation.tracking
     toc.follow
     toc.integrate
       
@@ -35,21 +33,19 @@ plugins:
     handlers:
       python:
         options:
+          docstring_style: google
           show_source: false
           show_root_heading: true
           show_root_full_path: true
-          heading_level: 2
+          heading_level: 3
+          parameter_headings: false
+          show_root_toc_entry: false
+          show_bases: true
+          docstring_section_style: table
 
 extra_css:
   - css/mkdocstrings.css
 
 watch:
   - docs/css
-  - docs/autocode
-
-nav:
-  - Home: 'index.md'
-  - 'commands.md'
-  - 'classes.md'
-  - 'autocode.md'
-  - 'advanced.md'
+  - docs/api

@@ -30,6 +30,10 @@ if 1:
     del parfile
     del Parameters
 
+# create tools (optional)
+if 1:
+    import senchar.tools.tools
+
 # scripts (optional)
 if 1:
     from senchar.utils import load_scripts

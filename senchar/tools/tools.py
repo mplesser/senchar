@@ -7,16 +7,12 @@ from .fe55 import Fe55
 from .gain import Gain
 from .gainmap import GainMap
 from .linearity import Linearity
-
-# from .metrology import Metrology
-# from .pocketpump import PocketPump
 from .prnu import Prnu
 from .ptc import Ptc
 from .qe import QE
-from .ramp import Ramp
 from .superflat import Superflat
 
-
+# create tools,  automatically added to db.tools dict
 bias = Bias()
 dark = Dark()
 defects = Defects()
@@ -26,10 +22,7 @@ fe55 = Fe55()
 gain = Gain()
 gainmap = GainMap()
 linearity = Linearity()
-# metrology = Metrology()
-# pocketpump = PocketPump()
 prnu = Prnu()
 ptc = Ptc()
 qe = QE()
-ramp = Ramp()
 superflat = Superflat()

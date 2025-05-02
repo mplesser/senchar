@@ -29,7 +29,7 @@ class Ds9Display(Display):
     """
 
     def __init__(self):
-        #: name used to reference the tool ("controller", "display", ...)
+        #: name used to reference the tool
         self.tool_id: str = "display"
 
         #: descriptive tool name

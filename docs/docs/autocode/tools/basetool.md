@@ -1,3 +1,0 @@
-# **BaseTool**
-
-::: senchar.tools.basetool
