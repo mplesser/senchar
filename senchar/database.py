@@ -131,32 +131,30 @@ class Database(object):
         }
         """dict of general parameters"""
 
+    def get(self, name: str) -> Any:
+        """
+        Returns a database attribute by name.
+        Args:
+          name: name of attribute to return
+        Returns:
+          value or None if *name* is not defined
+        """
 
-def get(self, name: str) -> Any:
-    """
-    Returns a database attribute by name.
-    Args:
-      name: name of attribute to return
-    Returns:
-      value or None if *name* is not defined
-    """
+        try:
+            obj = getattr(self, name)
+        except AttributeError:
+            obj = None
 
-    try:
-        obj = getattr(self, name)
-    except AttributeError:
-        obj = None
+        return obj
 
-    return obj
+    def set(self, name: str, value: Any) -> None:
+        """
+        Sets a database attribute value.
+        Args:
+          name: name of attribute to set
+          value: value of attribute to be set
+        """
 
+        setattr(self, name, value)
 
-def set(self, name: str, value: Any) -> None:
-    """
-    Sets a database attribute value.
-    Args:
-      name: name of attribute to set
-      value: value of attribute to be set
-    """
-
-    setattr(self, name, value)
-
-    return
+        return

@@ -18,7 +18,7 @@ def warning(message: str) -> None:
     # print(f"Warning: {message}")
 
     try:
-        senchar.logger.warning(message)
+        senchar.db.logger.warning(message)
     except Exception:
         print(f"Warning: {message}")
 
@@ -51,7 +51,7 @@ class SencharError(Exception):
             self.error_code = error_code
             # Original error was self.errors.message
 
-        if senchar.logger.logger is not None:
-            senchar.logger.error(message)
+        if senchar.db.logger is not None:
+            senchar.db.logger.error(message)
         else:
             print(f"SencharError: {message}")

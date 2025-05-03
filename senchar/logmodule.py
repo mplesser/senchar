@@ -24,6 +24,7 @@ class Logger(object):
         self.use_logprefix = 1
         self.last_data = []  # data since last call to get_data
         self.last_data_max = 1024  # max entries in last_data buffer
+        senchar.db.logger = self
 
     def log(self, message: str, *args: List[str], prefix: str = "", level: int = 1):
         """
@@ -175,8 +176,3 @@ def check_for_remote_logger(host: str = "localhost", port: int = 2404):
         return True
     except Exception:
         return False
-
-
-# create instance
-logger = Logger()
-senchar.log = logger.log

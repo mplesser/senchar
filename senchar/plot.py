@@ -12,10 +12,15 @@ import warnings
 import matplotlib
 import numpy
 from matplotlib import pyplot as plt
+import seaborn as sns
 
 import senchar
 import senchar.utils
 import senchar.exceptions
+
+# use seaborn library for plotting
+if 1:
+    sns.set_theme()
 
 #: plot data - *senchar.plot.plotdata*
 plotdata = {

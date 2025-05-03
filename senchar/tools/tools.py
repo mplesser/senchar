@@ -26,3 +26,18 @@ prnu = Prnu()
 ptc = Ptc()
 qe = QE()
 superflat = Superflat()
+
+# cleanup namespace
+del Bias
+del Dark
+del Defects
+del DetCal
+del Eper
+del Fe55
+del Gain
+del GainMap
+del Linearity
+del Prnu
+del Ptc
+del QE
+del Superflat

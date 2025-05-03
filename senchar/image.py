@@ -51,8 +51,8 @@ class Image(ImageHeaders, ImageIO):
         self.out_buffer = []
         # True if image was read from a file
         self.from_file = 0
-        # True if image was read from a file and has senchar header
-        self.senchar_header = 0
+        # True if image was read from a file and has azcam header
+        self.azcam_header = 0
 
         self.transposed_image = 0
         self.flip_image = 0

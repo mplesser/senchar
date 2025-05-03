@@ -19,6 +19,13 @@ db.datafolder = "/data"
 db.datafolder = "/data/DESI"
 db.imageroi = [[500, 700, 500, 700], [2050, 2060, 500, 700]]
 
+# create or customize logger
+from senchar.logmodule import Logger
+
+logger = Logger()
+senchar.log = logger.log
+logger.start_logging()
+
 # parameters (useful)
 if 1:
     from senchar.parameters import Parameters
@@ -32,7 +39,7 @@ if 1:
 
 # create tools (optional)
 if 1:
-    import senchar.tools.tools
+    from senchar.tools.tools import *
 
 # scripts (optional)
 if 1:

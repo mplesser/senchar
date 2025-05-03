@@ -285,6 +285,7 @@ class Bias(Tool):
         fignum = fig.number
         plt.title("Mean Image")
         senchar.plot.move_window(fignum)
+        ax.grid(False)
         im = plt.imshow(
             self.mean_image,
             cmap="gray",
@@ -301,6 +302,7 @@ class Bias(Tool):
         fignum = fig.number
         plt.title("Median Image")
         senchar.plot.move_window(fignum)
+        ax.grid(False)
         im = plt.imshow(
             self.median_image,
             cmap="gray",
@@ -308,6 +310,7 @@ class Bias(Tool):
             vmax=self.median + self.sdev * self.imageplot_scale,
             interpolation="nearest",
         )
+
         plt.tight_layout()
         plt.show()
         save_figure(fignum, self.median_plot)
@@ -317,6 +320,7 @@ class Bias(Tool):
         fignum = fig.number
         plt.title("Noise (sdev) Image")
         senchar.plot.move_window(fignum)
+        ax.grid(False)
         im = plt.imshow(
             self.sdev_image,
             cmap="gray",

@@ -94,14 +94,13 @@ class ImageIO(object):
             self.title = ""
 
         # check senchar header
+        self.azcam_header = 0
         try:
-            senchar_head = hdr["senchar-HEAD"]
+            senchar_head = hdr["AZCAM-HEAD"]
             if senchar_head == "OK":
-                self.senchar_header = 1
-            else:
-                self.senchar_header = 0
+                self.azcam_header = 1
         except KeyError:
-            self.senchar_header = 0
+            pass
 
         # set Array type - output data type
         self.array_type = self.data_types[self.bitpix2]
@@ -117,8 +116,8 @@ class ImageIO(object):
         self.focalplane.refpix1 = 0.0
         self.focalplane.refpix2 = 0.0
 
-        if self.senchar_header == 1:
-            # create empty arrays for focal plane values
+        if self.azcam_header == 1:
+            # create empty arrays for focalplane values
             self.focalplane.amp_cfg = numpy.ndarray(shape=(cntExt), dtype="<u2")
             self.focalplane.det_number = numpy.ndarray(shape=(cntExt), dtype="<u2")
             self.focalplane.ext_number = numpy.ndarray(shape=(cntExt), dtype="<u2")
@@ -286,7 +285,7 @@ class ImageIO(object):
                 self.offsets[indx] = 0.0
                 self.scales[indx] = 1.0
 
-            if self.senchar_header == 1:
+            if self.azcam_header == 1:
                 for indx in range(1, NumExt + 1):
                     try:
                         self.focalplane.amp_cfg[indx - 1] = self.hdulist[indx].header[
