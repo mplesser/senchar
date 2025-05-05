@@ -23,8 +23,9 @@ class Logger(object):
         self.logger = loguru.logger
         self.use_logprefix = 1
         self.last_data = []  # data since last call to get_data
-        self.last_data_max = 1024  # max entries in last_data buffer
-        senchar.db.logger = self
+        self.last_data_max = 1024
+        senchar.db.logger = self  # for exceptions
+        senchar.log = self.log  # replace default print()
 
     def log(self, message: str, *args: List[str], prefix: str = "", level: int = 1):
         """

@@ -282,6 +282,9 @@ class Dark(Tool):
         os.remove(self.dark_filename)
         os.rename(self.darksub_filename, self.dark_filename)
 
+        # create bright pixel mask
+        self.bright_mask = numpy.ma.getmask(self.masked_image).astype("uint8")
+
         if self.create_plots:
             self.plot_dark_signal()
 
@@ -301,25 +304,14 @@ class Dark(Tool):
         self.darkimage_plot = os.path.abspath(self.darkimage_plot)
         self.cumm_hist_plot = os.path.abspath(self.cumm_hist_plot)
 
-        # save dark mask
-        fig = senchar.plot.plt.figure()
-        fignum = fig.number
-        senchar.plot.move_window(fignum)
-        senchar.plot.plt.title("Bright Pixel Rejection Mask")
-        self.bright_mask = numpy.ma.getmask(self.masked_image).astype("uint8")
-        implot = senchar.plot.plt.imshow(self.bright_mask)
-        implot.set_cmap("gray")
-        senchar.plot.plt.show()
-        senchar.plot.save_figure(fignum, "BrightPixelRejectionMask")
-
-        # write mask as FITS
+        # write bright pixel mask as FITS
         maskfile = senchar.image.Image(self.dark_filename)
         maskfile.hdulist[0].header["OBJECT"] = "bright pixel mask"
         maskfile.assemble(1)  # for parameters
         maskfile.buffer = self.bright_mask
         maskfile.save_data_format = 8
         maskfile.overwrite = 1
-        maskfile.write_file(f"{self.BrightPixelRejectionMask}.fits", 6)
+        maskfile.write_file(f"{self.BrightPixelRejectionMask[:-4]}.fits", 6)
 
         # grade bright defects
         if self.grade_bright_defects:
@@ -373,9 +365,10 @@ class Dark(Tool):
             raise senchar.exceptions.SencharError("missing subplot configuration")
 
         # plot dark image
-        fig = plt.figure()
+        fig, ax = plt.subplots()
         fignum = fig.number
         senchar.plot.move_window(fignum)
+        ax.grid(False)
         senchar.plot.plot_image(self.dark_image, "sdev", 10.0)
         plt.title("Combined Dark Image")
         plt.show()
@@ -476,6 +469,17 @@ class Dark(Tool):
         plt.title("Dark Signal Histogram")
         plt.show()
         senchar.plot.save_figure(fignum, self.total_hist_plot)
+
+        # plot bright pixel rejection mask
+        fig, ax = plt.subplots()
+        fignum = fig.number
+        senchar.plot.move_window(fignum)
+        ax.grid(False)
+        senchar.plot.plt.title("Bright Pixel Rejection Mask")
+        implot = senchar.plot.plt.imshow(self.bright_mask)
+        implot.set_cmap("gray")
+        senchar.plot.plt.show()
+        senchar.plot.save_figure(fignum, "BrightPixelRejectionMask")
 
         return
 

@@ -154,7 +154,8 @@ class Bias(Tool):
                 self.superbias_filename, "-", self.mean, self.debiased_filename
             )
 
-        self.plot()
+        if self.create_plots:
+            self.plot()
 
         # save absolute filenames
         self.debiased_filename = os.path.abspath(self.debiased_filename)

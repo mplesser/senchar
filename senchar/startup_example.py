@@ -14,19 +14,20 @@ import senchar
 from senchar.tools import *
 from senchar import db
 
-# default values (useful)
+# set some useful default values
 db.datafolder = "/data"
 db.datafolder = "/data/DESI"
 db.imageroi = [[500, 700, 500, 700], [2050, 2060, 500, 700]]
 
-# create or customize logger
-from senchar.logmodule import Logger
+# create/customize logger
+if 0:
+    from senchar.logmodule import Logger
 
-logger = Logger()
-senchar.log = logger.log
-logger.start_logging()
+    logger = Logger()
+    logger.start_logging()
+    del Logger
 
-# parameters (useful)
+# use parameter file
 if 1:
     from senchar.parameters import Parameters
 
@@ -37,11 +38,11 @@ if 1:
     del parfile
     del Parameters
 
-# create tools (optional)
+# create tools
 if 1:
     from senchar.tools.tools import *
 
-# scripts (optional)
+# load scripts
 if 1:
     from senchar.utils import load_scripts
 
@@ -49,7 +50,7 @@ if 1:
     for name in db.scripts:
         globals()[name] = db.scripts[name]  # add to module namespace for import
 
-# web server (optional)
+# create web server
 if 0:
     from senchar.web.fastapi_server import WebServer
 
@@ -58,8 +59,10 @@ if 0:
     del WebServer
 
 
-# shortcuts (optional)
-def sav():
-    params.update_par_dict()
-    params.save_pars()
-    return
+# create shortcuts
+if 1:
+
+    def sav():
+        params.update_par_dict()
+        params.save_pars()
+        return

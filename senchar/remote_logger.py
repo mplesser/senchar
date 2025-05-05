@@ -29,7 +29,7 @@ class LoggingStreamHandler(socketserver.StreamRequestHandler):
             outstring = lrec.msg
             # outstring = outstring.replace("| senchar.logger:log:68 - ", "")
             # outstring = outstring.replace(" | INFO   ", "")
-            outstring = outstring[65:]
+            outstring = outstring[64:]
 
             print(outstring)
             # level, message = record["levelname"], record["msg"]
@@ -44,7 +44,7 @@ def start_and_serve_tcp(port: int = 2404):
 
     # optionally set window title
     try:
-        ctypes.windll.kernel32.SetConsoleTitleW("sencharlogger")
+        ctypes.windll.kernel32.SetConsoleTitleW("senchar logger")
     except Exception:
         pass
     print(f"Logging server started on port {port}")

@@ -373,18 +373,18 @@ class FocalPlane(ObjectHeaderMethods):
         self.amp_cfg = amp_cfg
 
         # set the keywords in the main header
-        self.header.set_keyword(
-            "N-DET-X", self.numdet_x, "Number of detectors in X", "int"
-        )
-        self.header.set_keyword(
-            "N-DET-Y", self.numdet_y, "Number of detectors in Y", "int"
-        )
-        self.header.set_keyword(
-            "N-AMPS-X", self.numamps_x, "Number of amplifiers in X", "int"
-        )
-        self.header.set_keyword(
-            "N-AMPS-Y", self.numamps_y, "Number of amplifiers in Y", "int"
-        )
+        # self.header.set_keyword(
+        #     "N-DET-X", self.numdet_x, "Number of detectors in X", "int"
+        # )
+        # self.header.set_keyword(
+        #     "N-DET-Y", self.numdet_y, "Number of detectors in Y", "int"
+        # )
+        # self.header.set_keyword(
+        #     "N-AMPS-X", self.numamps_x, "Number of amplifiers in X", "int"
+        # )
+        # self.header.set_keyword(
+        #     "N-AMPS-Y", self.numamps_y, "Number of amplifiers in Y", "int"
+        # )
 
         # set number of detectors
         self.num_detectors = self.numdet_x * self.numdet_y

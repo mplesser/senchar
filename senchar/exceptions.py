@@ -51,7 +51,7 @@ class SencharError(Exception):
             self.error_code = error_code
             # Original error was self.errors.message
 
-        if senchar.db.logger is not None:
+        if senchar.db.get("logger") is not None:
             senchar.db.logger.error(message)
         else:
             print(f"SencharError: {message}")
