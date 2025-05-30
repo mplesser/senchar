@@ -20,19 +20,10 @@ class Gain(Tool):
     def __init__(self):
         super().__init__("gain")
 
-        self.exposure_type = "flat"
-        self.exposure_time = -1
-        self.exposure_level = -1  # exposure_level in electrons/pixel, -1 do not used
-        self.number_pairs = 1
-        self.overwrite = 0
-        self.wavelength = -1  # -1 do not change wavelength
         self.video_processor_gain = []  # uV/DN for each channel
         self.system_noise_correction = []  # camera noise (no sensor) in DN
 
         self.include_dark_images = 0  # include dark images in acquire & analysis
-        self.dark_frame = None
-
-        self.clear_arrray = 0
 
         self.readnoise_spec = -1  # read noise spec (max) in electrons
 
@@ -44,6 +35,8 @@ class Gain(Tool):
         self.image_flat1 = ""
         self.image_flat2 = ""
 
+        self.rootname = "ptc."
+
         # outputs
         self.system_gain = []
         self.noise = []
@@ -52,28 +45,6 @@ class Gain(Tool):
         self.zero_mean = []
         self.sensitivity = []
 
-    def find(self):
-        """
-        Acquire and Analyze a PTC point for find gain, noise, scale, and offset.
-        Does not create a report during analysis.
-        """
-
-        createreport = self.create_reports
-        self.create_reports = 0
-
-        self.acquire()
-
-        cd = senchar.utils.curdir()
-        senchar.utils.curdir(self.imagefolder)
-
-        self.analyze()
-
-        self.create_reports = createreport
-
-        senchar.utils.curdir(cd)
-
-        return
-
     def analyze(self):
         """
         Analyze a bias image and two flat field images to generate a PTC point.
@@ -81,7 +52,7 @@ class Gain(Tool):
 
         senchar.log("Analyzing gain sequence")
 
-        rootname = "ptc."
+        rootname = self.rootname
 
         # bias image
         _, StartingSequence = senchar.utils.find_file_in_sequence(rootname)
@@ -122,8 +93,6 @@ class Gain(Tool):
             flat2filename = rootname + f"{SequenceNumber:04d}"
             flat2filename = senchar.utils.make_image_filename(flat2filename)
 
-            # ExposureTime = float(senchar.fits.get_keyword(flat1filename, "EXPTIME"))
-
             gain, noise, mean, sdev = self.measure_gain(
                 zerofilename, flat1filename, flat2filename, darkfilename
             )
@@ -146,10 +115,10 @@ class Gain(Tool):
             zeromean = senchar.fits.mean(zerofilename, self.roi[1])
             self.zero_mean = [a + b for a, b in zip(self.zero_mean, zeromean)]
 
-            senchar.log("Channel system_gain[e/DN] Noise[e]")
+            senchar.log("Channel System_Gain[e/DN] Noise[e]")
             for i in range(len(self.system_gain)):
                 senchar.log(
-                    f"{i:02d}      {gain[i]:0.02f}             {noise[i]:0.01f}"
+                    f"{i:02d}      {gain[i]:0.02f}              {noise[i]:0.01f}"
                 )
 
             SequenceNumber = SequenceNumber + 1
@@ -198,20 +167,20 @@ class Gain(Tool):
 
         return
 
-    def measure_gain(self, Zero, Flat1, Flat2, Dark=None):
+    def measure_gain(self, zero, flat1, flat2, dark=None):
         """
         Calculate gain and noise from a bias and photon transfer image pair.
         """
 
-        Zero = senchar.utils.make_image_filename(Zero)
-        Flat1 = senchar.utils.make_image_filename(Flat1)
-        Flat2 = senchar.utils.make_image_filename(Flat2)
+        zero = senchar.utils.make_image_filename(zero)
+        flat1 = senchar.utils.make_image_filename(flat1)
+        flat2 = senchar.utils.make_image_filename(flat2)
 
-        if Dark is not None:
-            Dark = senchar.utils.make_image_filename(Dark)
+        if dark is not None:
+            dark = senchar.utils.make_image_filename(dark)
 
         # extensions are elements 1 -> NumExt
-        NumExt, first_ext, last_ext = senchar.fits.get_extensions(Zero)
+        NumExt, first_ext, last_ext = senchar.fits.get_extensions(zero)
         if NumExt == 0:
             data_ffci = []
             gain = []
@@ -236,14 +205,14 @@ class Gain(Tool):
         self.roi = senchar.utils.get_image_roi()
 
         # get zero mean and sigma
-        zmean = senchar.fits.mean(Zero, self.roi[1])
-        zsdev = senchar.fits.sdev(Zero, self.roi[1])
+        zmean = senchar.fits.mean(zero, self.roi[1])
+        zsdev = senchar.fits.sdev(zero, self.roi[1])
 
         if self.include_dark_images:
-            dmean = senchar.fits.mean(Dark, self.roi[0])
+            dmean = senchar.fits.mean(dark, self.roi[0])
 
         # get flat mean for each extension
-        fmean = senchar.fits.mean(Flat1, self.roi[0])
+        fmean = senchar.fits.mean(flat1, self.roi[0])
         for ext in range(first_ext, last_ext):
             if self.include_dark_images:
                 flat_mean.append(fmean[ext - 1] - dmean[ext - 1])
@@ -251,10 +220,10 @@ class Gain(Tool):
                 flat_mean.append(fmean[ext - 1] - zmean[ext - 1])
 
         # open files
-        imf1 = pyfits.open(Flat1)
-        imf2 = pyfits.open(Flat2)
+        imf1 = pyfits.open(flat1)
+        imf2 = pyfits.open(flat2)
         if self.include_dark_images:
-            dark1 = pyfits.open(Dark)
+            dark1 = pyfits.open(dark)
 
         # make ffci data
         #   order is .data[] order, not EXT/IM order
@@ -347,14 +316,5 @@ class Gain(Tool):
 
         # Make report files
         self.write_report(self.report_file, lines)
-
-        return
-
-    def fe55_gain(self):
-        """
-        Set gain.system_gain to senchar.db.tools["fe55"].system_gain values.
-        """
-
-        self.system_gain = senchar.db.tools["fe55"].system_gain
 
         return

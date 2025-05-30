@@ -281,7 +281,7 @@ def check_keyboard(wait: bool = False) -> str:
         if not wait:
             loop = 0
 
-    return key
+    return str(key)
 
 
 def show_menu(configs: dict) -> str:
@@ -316,7 +316,7 @@ def show_menu(configs: dict) -> str:
         choiceindex = input()
         if choiceindex == "q":
             senchar.exceptions.warning("Quit detected")
-            return
+            return ""
         try:
             choiceindex = int(choiceindex)
         except ValueError:
@@ -329,7 +329,7 @@ def show_menu(configs: dict) -> str:
         # remove blanks
         for x in configs:
             if x == "blank":
-                configs.remove("blank")
+                configs.pop("blank")
 
         if choiceindex < 0 or choiceindex > len(configs) - 1:
             print("invalid selection - %d\n" % (choiceindex + 1))
@@ -356,11 +356,11 @@ def get_datafolder(datafolder: str | None = None):
         droot = os.environ.get("senchar_DATAROOT")
         if droot is None:
             if os.name == "posix":
-                droot = os.environ.get("HOME")
+                dr = str(os.environ.get("HOME"))
             else:
-                droot = "/"
+                dr = "/"
             datafolder = os.path.join(
-                os.path.realpath(droot), "data", senchar.db.systemname
+                os.path.realpath(dr), "data", senchar.db.systemname
             )
         else:
             datafolder = os.path.join(os.path.realpath(droot), senchar.db.systemname)
@@ -576,7 +576,7 @@ def set_image_roi(roi: list = []) -> None:
     return
 
 
-def get_tools(tool_names: list) -> list:
+def get_tools(tool_names: list[str]) -> list[object]:
     """
     Return a list of tool objects from a list of their names.
 
@@ -594,7 +594,7 @@ def get_tools(tool_names: list) -> list:
         if tool1 is not None:
             tools.append(tool1)
         else:
-            tools.append(senchar.db.tools(tool))
+            tools.append(senchar.db.tools[tool])
 
     return tools
 
@@ -688,7 +688,7 @@ def bf():
     """Shortcut for file_browser()."""
 
     folder = file_browser("", "folder", "Select folder")
-    if folder == []:
+    if folder is None:
         return
     if isinstance(folder, list):
         folder = folder[0]
@@ -711,7 +711,8 @@ def load_scripts(package_list: list = [], folder_list: list = []) -> None:
     for package in package_list:
         spec = importlib.util.find_spec(package)
         if spec is not None:
-            folder = spec.submodule_search_locations[0]
+            if spec.submodule_search_locations is not None:
+                folder = spec.submodule_search_locations[0]
             folders.append(folder)
             continue
 

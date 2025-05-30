@@ -558,7 +558,7 @@ class Ds9Display(Display):
         elif mode == "crosshair":
             self._set_crosshair(clear_rois)
         else:
-            raise senchar.exceptions.sencharError("Invalid cursor mode")
+            raise senchar.exceptions.SencharError("Invalid cursor mode")
 
         return
 
@@ -691,14 +691,14 @@ class Ds9Display(Display):
                     "mean: %.1f   sdev: %.2f   ROI: %s"
                     % (mean, sdev, str(self.get_roi_string(roi_number)))
                 )
-                key = senchar.utils.check_keyboard(0)
+                key = senchar.utils.check_keyboard(False)
                 if key == "q":
                     break
                 time.sleep(0.1)
             except Exception:
                 pass
 
-            if senchar.utils.check_keyboard(0) == "q":
+            if senchar.utils.check_keyboard(False) == "q":
                 break
 
         return
@@ -714,9 +714,9 @@ class Ds9Display(Display):
         self.read_rois()
         numrois = len(self.detector_roi)
         if numrois == 0:
-            raise senchar.exceptions.sencharError("No ROI defined")
+            raise senchar.exceptions.SencharError("No ROI defined")
         elif roi_number > numrois:
-            raise senchar.exceptions.sencharError("Invalid ROI number")
+            raise senchar.exceptions.SencharError("Invalid ROI number")
 
         roi = self.detector_roi[roi_number]
 

@@ -17,6 +17,7 @@ import seaborn as sns
 import senchar
 import senchar.utils
 import senchar.exceptions
+from senchar.image import Image
 
 # use seaborn library for plotting
 if 1:
@@ -143,7 +144,7 @@ def delay(delay: float) -> None:
     return
 
 
-def tools(figure_number=1, include_motion: bool = 0) -> None:
+def tools(figure_number=1, include_motion: bool = False) -> None:
     """
     Starts interactive plotting tool for a Figure.
     Updates data fron plot events.
@@ -282,23 +283,6 @@ def close_figure(figures: str = "all") -> None:
     return
 
 
-def set_figure(figure_number: int = 1, subplot: int = 111) -> None:
-    """
-    Set the active figure and plot for subsequent plot commands.
-    A single plot is '111', a top plot of 2 is '211' and the bottom is '212'.
-
-    Args:
-        figure_number: figure number.
-        subplot: subplot ID.
-    """
-
-    plt.figure(figure_number)
-    subplot = int(subplot)
-    plt.axes(subplot)
-
-    return
-
-
 def save_figure(figure_number: int = 1, figure_name: str = "") -> None:
     """
     Save a plotted figure to disk.
@@ -319,7 +303,7 @@ def save_figure(figure_number: int = 1, figure_name: str = "") -> None:
 
 
 def rescale(
-    axes_values: list = None, sub_plot: int = 111, figure_number: int = 1
+    axes_values: tuple = (), sub_plot: int = 111, figure_number: int = 1
 ) -> None:
     """
     Replot a figure with new axes limits.
@@ -331,31 +315,26 @@ def rescale(
         figure_number: figure number.
     """
 
-    plt.figure(figure_number)  # make FigureNumbe current
-    ax1 = plt.subplot(sub_plot)  # make subplot axes current
+    plt.figure(figure_number)  # make figure_number current
+    ax1 = plt.subplot(sub_plot)  # make sub_plot axes current
 
-    [xmin0, xmax0, ymin0, ymax0] = ax1.axis()  # get current values
+    (xmin0, xmax0, ymin0, ymax0) = ax1.axis()  # get current values
 
-    if not axes_values:
-        xmin = senchar.utils.prompt("Enter xmin value", xmin0)
-        xmax = senchar.utils.prompt("Enter xmax value", xmax0)
-        ymin = senchar.utils.prompt("Enter ymin value", ymin0)
-        ymax = senchar.utils.prompt("Enter ymax value", ymax0)
+    if axes_values != ():
+        xmin = float(senchar.utils.prompt("Enter xmin value", xmin0))
+        xmax = float(senchar.utils.prompt("Enter xmax value", xmax0))
+        ymin = float(senchar.utils.prompt("Enter ymin value", ymin0))
+        ymax = float(senchar.utils.prompt("Enter ymax value", ymax0))
 
-        xmin = float(xmin)
-        xmax = float(xmax)
-        ymin = float(ymin)
-        ymax = float(ymax)
+        axes_values = (xmin, xmax, ymin, ymax)
 
-        axes_values = [xmin, xmax, ymin, ymax]
-
-    ax1.axis(axes_values)
+        ax1.axis(axes_values)
     plt.draw()
 
     return
 
 
-def display(azimage: object, cmap: str = "gray") -> None:
+def display(azimage: Image, cmap: str = "gray") -> None:
     """
     Make a matplotlib display of an senchar image.
     cmap is a matplotlib color map.
@@ -374,7 +353,7 @@ def display(azimage: object, cmap: str = "gray") -> None:
 
 
 def plot_image(
-    azimage: object,
+    azimage: Image,
     scale_type: str = "sdev",
     scale_factor: float = 20.0,
     cmap: str = "gray",

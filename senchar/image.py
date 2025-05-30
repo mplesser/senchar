@@ -4,10 +4,12 @@ Contains the Image class.
 
 import os
 
+import numpy
+from numpy import ndarray
+
 import senchar
 import senchar.utils
 import senchar.exceptions
-import numpy
 from senchar.header import Header
 from senchar.image_focalplane import FocalPlane
 from senchar.image_headers import ImageHeaders
@@ -46,9 +48,9 @@ class Image(ImageHeaders, ImageIO):
         # image szie - rows
         self.size_y = 0
         # numpy image buffer for assembled image [y,x]
-        self.buffer = []
-        self.in_buffer = []
-        self.out_buffer = []
+        self.buffer = ndarray
+        self.in_buffer = ndarray
+        self.out_buffer = ndarray
         # True if image was read from a file
         self.from_file = 0
         # True if image was read from a file and has azcam header
@@ -63,7 +65,7 @@ class Image(ImageHeaders, ImageIO):
         self.scales = []
         self.offsets = []
         # numpy image data buffer
-        self.data = []
+        self.data = ndarray
         # display image
         self.display_image = 0
 
@@ -126,7 +128,8 @@ class Image(ImageHeaders, ImageIO):
         self.is_valid = 0
         self.toggle = 0
 
-        self.header = Header(self)  # new header
+        # create a new header when reading a file
+        self.header = Header()
 
         # read file
         self._read_fits_file(self.filename)

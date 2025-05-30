@@ -46,7 +46,7 @@ class Bias(Tool):
         #: bias noise image plot
         self.sdev_plot = "noise_image.png"
 
-        self.imageplot_scale = 3.0
+        self.imageplot_scale = 5.0
 
         #: list of image data from all frames [N][y][x]
         self.datacube = numpy.array
@@ -71,6 +71,8 @@ class Bias(Tool):
         self.mean_noise = []
         self.median_noise = []
 
+        self.rootname = "bias."
+
         #: output data file
         self.data_file = "bias.txt"
         #: output report file
@@ -87,7 +89,7 @@ class Bias(Tool):
 
         senchar.log("Analyzing bias sequence")
 
-        rootname = "bias."
+        rootname = self.rootname
 
         # reset parameters
         self.superbias_filename = "superbias.fits"
@@ -116,7 +118,7 @@ class Bias(Tool):
         self.bias_images = []
         for frame in self.bias_filenames:
             im = senchar.image.Image(frame)
-            im.assemble(1)  # assembled an trim overscan
+            im.assemble(1)
             self.bias_images.append(im)
 
         # indices are: [imagenum][y][x]
@@ -203,8 +205,6 @@ class Bias(Tool):
         self.counts = counts
         self.bins = bins
         plt.stairs(counts, bins)
-        ax.grid(1)
-        plt.yscale("log")
         plt.axvline(
             x=self.mean_noise,
             linestyle="dashed",
@@ -217,6 +217,9 @@ class Bias(Tool):
             color="black",
             label="Median",
         )
+        ax.grid(1)
+        plt.yscale("log")
+        plt.xlim([0.0, self.mean_noise * 10])
         ax.set_xlabel(f"Noise [DN]")
         ax.set_ylabel("Fraction")
         plt.legend(loc="upper right")
@@ -234,7 +237,7 @@ class Bias(Tool):
         plt.plot(self.bins[:-1], f1)
         ax.grid(1)
         plt.ylim([0.3, 1.0])
-        plt.xlim([0.0, self.sdev_image.mean() * 3])  # 3 sigma plot
+        plt.xlim([0.0, self.sdev_image.mean() * 10])
         ax.set_xlabel(f"Noise [DN]")
         ax.set_ylabel("Fraction")
         plt.axvline(
@@ -249,12 +252,13 @@ class Bias(Tool):
             color="black",
             label="Median",
         )
-        plt.legend(loc="lower right")
+        plt.legend(loc="upper right")
         plt.tight_layout()
         plt.show()
         save_figure(fignum, self.cumm_hist_plot)
 
         # plot means histogram
+        # plot full range to show defects
         fig, ax = plt.subplots()
         fignum = fig.number
         plt.title("Bias Means Histogram")
@@ -280,6 +284,8 @@ class Bias(Tool):
         plt.tight_layout()
         plt.show()
         save_figure(fignum, self.means_hist_plot)
+
+        return
 
         # plot mean image
         fig, ax = plt.subplots()

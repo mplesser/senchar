@@ -22,8 +22,6 @@ class Logger(object):
         self.logfile = "senchar.log"
         self.logger = loguru.logger
         self.use_logprefix = 1
-        self.last_data = []  # data since last call to get_data
-        self.last_data_max = 1024
         senchar.db.logger = self  # for exceptions
         senchar.log = self.log  # replace default print()
 
@@ -64,9 +62,6 @@ class Logger(object):
 
         # log eveything at INFO level
         self.logger.info(f"{message}")
-
-        # append to last_data
-        self.last_data.append(f'"{message}"')
 
         return
 
@@ -151,16 +146,6 @@ class Logger(object):
             senchar.log(f"Logging to file {self.logfile}")
 
         return
-
-    def get_logdata(self):
-        """
-        Returns log data.
-        """
-
-        buffer = self.last_data
-        self.last_data = []
-
-        return buffer
 
 
 def check_for_remote_logger(host: str = "localhost", port: int = 2404):

@@ -6,6 +6,8 @@ Usage examples:
   python -i -m senchar.startup_example
 
 With the -m option on python, the local variables here are imported into the CLI namespace.
+
+This exampel assumes a datafolder location of "/data/senchar".
 """
 
 import os
@@ -16,10 +18,10 @@ from senchar import db
 
 # set some useful default values
 db.datafolder = "/data"
-db.datafolder = "/data/DESI"
+db.datafolder = "/data/senchar"
 db.imageroi = [[500, 700, 500, 700], [2050, 2060, 500, 700]]
 
-# create/customize logger
+# create customized logger, otherwise logging is just print().
 if 0:
     from senchar.logmodule import Logger
 
@@ -27,7 +29,7 @@ if 0:
     logger.start_logging()
     del Logger
 
-# use parameter file
+# use a parameter file to save data between sessions
 if 1:
     from senchar.parameters import Parameters
 
@@ -50,7 +52,7 @@ if 1:
     for name in db.scripts:
         globals()[name] = db.scripts[name]  # add to module namespace for import
 
-# create web server
+# create a web server
 if 0:
     from senchar.web.fastapi_server import WebServer
 
@@ -58,8 +60,7 @@ if 0:
     db.webserver.start()
     del WebServer
 
-
-# create shortcuts
+# create some simple shortcuts
 if 1:
 
     def sav():
